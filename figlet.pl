@@ -1,7 +1,7 @@
 #!/usr/bin/perl -s
-use vars qw($A $D $F $I1 $I2 $I3 $d $demo $f $help $m $w);
+use vars qw($A $D $I1 $I2 $I3 $L $R $X $c $d $demo $f $help $l $m $r $w $x);
 use Text::FIGlet;
-$VERSION = '2.02';
+$VERSION = '2.1';
 if( $help ){
     eval "use Pod::Text;";
     die("Unable to print man page: $@\n") if $@;
@@ -12,7 +12,7 @@ if($I1){
     die($VERSION*1000, "\n");
 }
 
-$font = Text::FIGlet->new(-D=>$D, -F=>$F, -d=>$d, -f=>$f);
+$font = Text::FIGlet->new(-D=>$D&!$E, -d=>$d, -m=>$m, -f=>$f);
 
 if($I2){
     die("$font->{-d}\n");
@@ -20,20 +20,30 @@ if($I2){
 if($I3){
     die("$font->{-f}\n");
 }
-
 if( $demo ){
-    print $font->figify(-A=>join('', map(chr($_), 33..127)), -w=>$w);
+    print $font->figify(-A=>join('', map(chr($_), 33..127)),
+			-X=>($L&&'L')||($R&&'R'),
+			-m=>$m,
+			-w=>$w,
+			-x=>($l&&'l')||($c&&'c')||($r&&'r'));
     exit 0;
 }
-
 if( $A ){
     @ARGV = map($_ = $_ eq '' ? $/ : $_, @ARGV);
-    print $font->figify(-A=>join(' ', @ARGV), -m=>$m, -w=>$w), "\n";
+    print $font->figify(-A=>join(' ', @ARGV),
+			-X=>($L&&'L')||($R&&'R'),
+			-m=>$m,
+			-w=>$w,
+			-x=>($l&&'l')||($c&&'c')||($r&&'r'));
 }
 else{
-    Text::FIGlet::croak("Usage: figlet.pl -help") if @ARGV;
+    Text::FIGlet::croak("Usage: minifig.pl -help") if @ARGV;
     while(<STDIN>){
-	print $font->figify(-A=>$_, -m=>$m, -w=>$w), "\n";
+	print $font->figify(-A=>$_,
+			    -X=>($L&&'L')||($R&&'R'),
+			    -m=>$m,
+			    -w=>$w,
+			    -x=>($l&&'l')||($c&&'c')||($r&&'r'));
     }
 }
 __END__
@@ -48,12 +58,19 @@ figlet.pl - FIGlet in perl, akin to banner
 B<figlet.pl>
 [ B<-A> ]
 [ B<-D> ]
-[ B<-F> ]
+[ B<-E> ]
+[ B<-L> ]
+[ B<-R> ]
+[ B<-X> ]
+[ B<-c> ]
 [ B<-d=>F<fontdirectory> ]
 [ B<-demo> ]
 [ B<-f=>F<fontfile> ]
 [ B<-help> ]
+[ B<-l> ]
+[ B<-r> ]
 [ B<-w=>I<outputwidth> ]
+[ B<-x> ]
 
 =head1 DESCRIPTION
 
@@ -74,21 +91,15 @@ To include text begining with - that might otherwise
 appear to be an invalid argument, use the argument --
 
 =item B<-D>
+B<-E>
 
-Switches  to  the German (ISO 646-DE) character
+B<-D>  switches  to  the German (ISO 646-DE) character
 set.  Turns `[', `\' and `]' into umlauted A, O and
 U,  respectively.   `{',  `|' and `}' turn into the
 respective lower case versions of these.  `~' turns
-into  s-z. This option is deprecated, which means it
-may not appear in upcoming versions of FIGlet.
-
-=item B<-F>
-
-This will pad each character in the font such that they are all
-a consistent width. The padding is done such that the character
-is centered in it's "cell", and any odd padding is the trailing edge.
-
-NOTE: This should probably be considered experimental
+into  s-z.   B<-E>  turns  off  B<-D>  processing.  These
+options are deprecated, which means  they  probably
+will not appear in the next version of FIGlet.
 
 =item B<-I>I<infocode>
 
@@ -97,8 +108,8 @@ These   options  print  various  information  about FIGlet, then exit.
 1 Version (integer).
 
        This will print the version of your copy  of
-       FIGlet  as a decimal integer.  The main verÅ≠
-       sion number is multiplied by 10000, the sub-
+       FIGlet  as a decimal integer.  The main version
+       number is multiplied by 10000, the sub-
        version number is multiplied by 100, and the
        sub-sub-version number is multiplied  by  1.
        These  are added together, and the result is
@@ -121,14 +132,39 @@ These   options  print  various  information  about FIGlet, then exit.
        This is not a filename; the ``.flf''  suffix
        is not printed.
 
+=item B<-L>
+B<-R>
+B<-X>
+
+These  options  control whether FIGlet prints
+left-to-right or  right-to-left. B<-L> selects
+left-to-right printing. B<-R> selects right-to-left printing.
+B<-X> (default) makes FIGlet use whichever is specified
+in the font file.
+
+=item B<-c>
+B<-l>
+B<-r>
+B<-x>
+
+These  options  handle  the justification of FIGlet
+output.  B<-c> centers the  output  horizontally.   B<-l>
+makes  the  output  flush-left.  B<-r> makes it flush-
+right.  B<-x> (default) sets the justification according
+to whether left-to-right or right-to-left text
+is selected.  Left-to-right  text  will  be  flush-
+left, while right-to-left text will be flush-right.
+(Left-to-rigt versus right-to-left  text  is  controlled by B<-L>,
+B<-R> and B<-X>.)
+
 =item B<-d>=F<fontdirectory>
 
 Change the default font  directory.   FIGlet  looks
 for  fonts  first in the default directory and then
-in the current directory.  If the <d> option is  not
-specified, FIGlet uses the directory that was specÅ≠
-ified when it was  compiled.   To  find  out  which
-directory this is, use the B<I2> option.
+in the current directory.  If the B<-d> option is  not
+specified, FIGlet uses the directory that was specified
+when it was  compiled.   To  find  out  which
+directory this is, use the B<-I2> option.
 
 =item B<-demo>
 
@@ -144,7 +180,7 @@ directory, or, if fontfile  was  given  as  a  full
 pathname, in the given directory.  If the B<-f> option
 is not specified, FIGlet uses  the  font  that  was
 specified  when it was compiled.  To find out which
-font this is, use the B<I3> option.
+font this is, use the B<-I3> option.
 
 =item B<-m>I<smushmode>
 
@@ -157,11 +193,29 @@ specifies the best smushmode to use with the  font.
 B<-m>  is,  therefore,  most  useful to font designers
 testing the various  
 
-Currently B<figlet.pl> only understands one smush mode,
-so you need not specify anything.
+S<-2>
+       Get mode from font file (default).
 
-S<-1> No smushing or kerning.
+       Every  FIGlet  font  file specifies the best
+       smushmode to use with the font.   This  will
+       be  one  of  the  smushmodes (-1 through 63)
+       described in the following paragraphs.
+S<-1>
+       No smushing or kerning.
+
        Characters are simply concatenated together.
+
+S<-0>
+       Fixed width.
+
+       This will pad each character in the font such that they are all
+       a consistent width. The padding is done such that the character
+       is centered in it's "cell", and any odd padding is the trailing edge.
+
+S<0>
+       Kern only.
+
+       Characters  are  pushed  together until they touch.
 
 =item B<-w>=I<outputwidth>
 
@@ -171,7 +225,7 @@ output.   FIGlet  uses the outputwidth to determine
 when to break lines and how to center  the  output.
 Normally,  FIGlet assumes 80 columns so that people
 with wide terminals won't annoy the people they  e-mail
-FIGlet output to. B<w> sets the  outputwidth 
+FIGlet output to. B<-w> sets the  outputwidth 
 to  the  given integer.   An  outputwidth  of 1 is a
 special value that tells FIGlet to print each non-
 space  character, in its entirety, on a separate line,
@@ -205,13 +259,16 @@ The default location of fonts.
 
 =head1 FILES
 
-FIGlet font files, these can be found at
+FIGlet home page
 
  http://st-www.cs.uiuc.edu/users/chai/figlet.html
+ http://mov.to/figlet/
+
+FIGlet font files, these can be found at
+
  http://www.internexus.net/pub/figlet/
  ftp://wuarchive.wustl.edu/graphics/graphics/misc/figlet/
  ftp://ftp.plig.org/pub/figlet/
-
 
 =head1 SEE ALSO
 

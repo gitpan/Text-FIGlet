@@ -1,19 +1,48 @@
 Revision history for Perl extension Text::FIGlet, figlet.pl, minifig.pl
+1.05  
+	- Added -m modes 0 (kerning) and -2 (font defined)
+	- Added -c, -l, -r, -x; justification
+	- Added -L, -R, -X; orientation
+	- Added -E
+        - Fixed -f to allow absolute path
+	- Documentation, had neglected to remove -F and other cleanup
+	- Synced figlet.pl and minifig.pl
+	- Updated minifig.HOWTO
+	- Upgraded figlet.pl/minifig.pl version to 2.1,
+	  I'm told this more appropriate based upon current
+	  white-space handling in font files.
+	- Switched internal font structure to an array.
+	  I'd avoided using an array for fear of allocating large
+	  blocks of memory due to auto-vivification. But this
+	  shouldn't even be a potential problem unless you're using
+	  a font that defines extended characters sparsely.
+	  This change increases performance because it avoids
+	  the permutations limiting factor of hashes, and is
+	  proportional to the text size.
+	  -f mini -m 0 -A Hello #Hash
+	  1.800u 0.020s 0:01.81 100.5%    0+0k 0+0io 253pf+0w
+	  -f mini -m 0 -A Hello #Array
+	  1.250u 0.050s 0:01.29 100.7%    0+0k 0+0io 251pf+0w
+	- Removed "- Better line wrapping" from TODO for 1.04.
+	  Considered done until reported broken (See 1.04 below)
+
 1.04  Thu Nov 30 01:37:57 GMT 2000
-        - Decided to fix a bug where if you supplied -d and
+	- Decided to fix a bug where if you supplied -d and
 	  an absolute path for -f, you got what you deserved.
-	  But after eating my own dogfood; there is now a
-	  Webmin module that uses this ;-) Tastes great!
-	  Totally useless!; I found it was rather annoying.
+	  But after eating my own dog food (there's a
+	  Webmin module that uses this now... Tastes great!
+	  Totally useless! :-), I found it was rather annoying.
 	- Fixed -w, it is now much smarter and wraps whole words
-	  where applicable en lieu of letters. It is still conceivable
-	  that it the output may overrun the requested outputwidth.
-	  If you run into this *LET ME KNOW* (text w/formatting, font),
-	  please. So I can determine if it's worth opening that can of worms.
+	  where applicable en lieu of letters. It is still
+	  conceivable that the output may overrun the requested
+	  outputwidth. If you run into this *LET ME KNOW*
+	  (text w/formatting, font), please. So I can determine
+	  if it's worth opening that can of worms.
         - Seems I can't quite get this right...
-	  I bumped the VERSION to 1.03 in minifig.pl but FIGlet.pm
-	  was left at 1.02. Also neglected to increment the figlet.pl
-	  VERSION. And I left the timestamp off of the 1.03 entry below.
+	  I bumped the VERSION to 1.03 in minifig.pl but
+	  FIGlet.pm was left at 1.02. Also neglected to increment
+	  the figlet.pl VERSION. And I left the timestamp off of
+	  the 1.03 entry below.
 	- Documented -help, added usage statement
 	- Added smush mode
 	  -F has been fixed and is now smush mode -0

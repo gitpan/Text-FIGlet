@@ -41,7 +41,7 @@ OR
 @@ -22,7 +23,17 @@
      local $_;
  
-     $font = File::Spec->catfile($self->{-d}, $self->{-f});
+     $font = File::Spec->catfile($self->{-d}, basename($self->{-f}));
 -    open(FLF, $font) || open(FLF, "$font.flf") || croak("$!: $font");
 +    if( $self->{-f} ){
 +	open(FLF, $font) || open(FLF, "$font.flf") || croak("$!: $font");

@@ -24,6 +24,6 @@ while(<IN>){
 $/ = "\012";
 #print $txt;
 #print "="x80;
-#print Text::FIGlet->new(-d=>'.')->figify(-A=>"Hello World");
-print "not " unless $txt eq Text::FIGlet->new(-d=>'.')->figify(-A=>"Hello World");
+#print Text::FIGlet->new(-d=>'.')->figify(-A=>"Hello World", -m=>-1);
+print "not " unless $txt eq Text::FIGlet->new(-d=>'.')->figify(-A=>"Hello World", -m=>-1);
 print "ok 2\n";

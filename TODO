@@ -1,5 +1,10 @@
+1.05
+	- smushing (-m=1|2|4|8|16|32)
+	- control files?
+	- "Vertical Fitting"?
+	- other scripts: chkfont, showfigfont, charmap?
+
 1.04
-	- Better line wrapping
 	- more smushing (-m)
 	- justification? (-c, -l, -r, -x)
 	- orientation (rtol)
