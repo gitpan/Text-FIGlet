@@ -1,3 +1,9 @@
+1.04
+	- Better line wrapping
+	- more smushing (-m)
+	- justification? (-c, -l, -r, -x)
+	- orientation (rtol)
+	- control files?
 1.03
 	- Better line wrapping
 	- justification? (-c, -l, -r, -x)

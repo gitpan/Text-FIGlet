@@ -1,7 +1,9 @@
 package Text::FIGlet;
-$VERSION = '1.02';
+$VERSION = '1.04';
 use Carp qw(carp croak);
 use File::Spec;
+use File::Basename qw(basename);
+use Text::Wrap;
 use strict;
 
 sub new{
@@ -21,7 +23,7 @@ sub _load_font($) {
     my(@header, $header, $font);
     local $_;
 
-    $font = File::Spec->catfile($self->{-d}, $self->{-f});
+    $font = File::Spec->catfile($self->{-d}, basename($self->{-f}));
     open(FLF, $font) || open(FLF, "$font.flf") || croak("$!: $font");
     chomp($header = <FLF>);
     croak("Invalid figlet 2 font") unless $header =~ /^flf2/;
@@ -63,38 +65,40 @@ sub _load_font($) {
 	_load_char($self, eval $1) || last;
     }
 
-    if( $self->{-F} ){
+    if( $self->{-m} eq '-0' ){
 	my $len;
 	foreach my $ord ( keys %{$self->{_font}} ){
 	    for(my $i=1; $i<=$self->{_header}->[1]; $i++ ){
 		$len = length($self->{_font}->{$ord}->[$i]);
-		$self->{_font}->{$ord}->[$i] =
-		    " " x int(($self->{_maxlen}-$len)/2) .
-			$self->{_font}->{$ord}->[$i] .
-			    " " x ($len-int(($self->{_maxlen}-$len)/2));
+		if( $self->{_maxlen} > $len ){
+		    $len = $self->{_maxlen} - $len;
+		    $self->{_font}->{$ord}->[$i] =
+			" " x int($len/2) .
+			    $self->{_font}->{$ord}->[$i] .
+				" " x ($len-int($len/2));
+		}
 	    }
 	    $self->{_font}->{$ord}->[0] = $self->{_maxlen};
 	}
     }
 }
 
-sub _load_char($$$){
+sub _load_char($$){
     my($self, $i) = @_;
-
     my $length;
+
     for(my $j=0; $j<$self->{_header}->[1]; $j++){
 	local $_ = <FLF> || carp("Unexpected end of font file") && return 0;
 	$self->{_font}->{$i} .= $_;
 	$length = $length > length($_) ? $length : length($_);
-	if( $self->{-F} ){
+	if( $self->{-m} eq '-0' ){
+	    $length -= (s/(^\s+)|(\s+$)//g);
 	    $self->{_maxlen} = $length > $self->{_maxlen} ?
 		$length : $self->{_maxlen};
 	}
     }
     $self->{_font}->{$i} =~ /(.){2}$/;
     $self->{_font}->{$i} =~ s/$1|\015//g;
-#    #This will move to figify() once it supports smushing?
-    $self->{_font}->{$i} =~ s/$self->{_header}->[0]/ /g;
     $self->{_font}->{$i} = [$length-3, split($/, $self->{_font}->{$i})];
     return 1;
 }
@@ -108,32 +112,23 @@ sub figify{
     $opts{-w} ||= 80;
 
     #Do text formatting here...
-    if( $opts{-w} == 1 ){
-	@text = split(//, $opts{-A});
+    $opts{-A} =~ tr/\t/ /;
+    $opts{-A} =~  s%$/%\n%;
+    if( $opts{-m} eq '-0' ){
+	$Text::Wrap::columns = int($opts{-w} / $self->{_maxlen});
+	$opts{-A} = Text::Wrap::wrap('', '', $opts{-A}), "\n";
     }
     else{
-	@text = split($/, $opts{-A});
-    }
-    if( $opts{-w} > 1 ){
-	foreach my $line( @text ){
-	    my $length;
-	    my @lchars = map(ord($_), split('', $line));
-	    $buffer = '';
-	    foreach my $lchar (@lchars){
-		$length += $self->{_font}->{$lchar}->[0];
-		if( $length > $opts{-w} ){
-		    $length = $self->{_font}->{$lchar}->[0];
-		    $buffer .= $/ . chr($lchar);
-		}
-		else{
-		    $buffer .= chr($lchar);
-		}
-	    }
-	    $line = $buffer;
+	$Text::Wrap::columns = $opts{-w}+1;
+	@text = split(//, $opts{-A});
+	$opts{-A} = '';
+	foreach( @text ){
+	    $opts{-A} .= $_ . "\0" x ($self->{_font}->{ord($_)}->[0]-1);
 	}
-	$buffer = '';
-	@text = split($/, join($/, @text));
+        $opts{-A} = Text::Wrap::wrap('', '', $opts{-A}), "\n";
+	$opts{-A} =~ tr/\0//d;
     }
+    @text = split("\n", $opts{-A});
 
     foreach( @text ){
 	my @lchars = map(ord($_), split('', $_));
@@ -149,6 +144,7 @@ sub figify{
 	    $buffer .= $/;
 	}
     }
+    $buffer =~ s/$self->{_header}->[0]/ /g;
     return $buffer;
 }
 1;
@@ -178,7 +174,7 @@ U,  respectively.   `{',  `|' and `}' turn into the
 respective lower case versions of these.  `~' turns
 into  s-z. Assumin, of course, that the font author
 included these characters. This option is deprecated, which means it
-may not appear in upcoming versions of FIGlet.
+may not appear in upcoming versions of B<Text::FIGlet>.
 
 =item B<-F=E<gt>>I<boolean>
 
@@ -199,6 +195,30 @@ Defaults to F</usr/games/lib/figlet.dir>
 The font to load.
 
 Defaults to F<standard>
+
+=item B<-m=E<gt>>I<smushmode>
+
+Specifies how B<Text::FIGlet> should ``smush'' and kern consecutive
+characters together.  On the command line,
+B<-m0> can be useful, as it tells FIGlet to kern characters
+without smushing them together.   Otherwise,
+this option is rarely needed, as a B<Text::FIGlet> font file
+specifies the best smushmode to use with the  font.
+B<-m>  is,  therefore,  most  useful to font designers
+testing the various  
+
+S<-1> Is currently the default, B<figlet>'s default is S<-2>
+
+S<-1>
+       No smushing or kerning.
+       Characters are simply concatenated together.
+
+S<-0>
+       This will pad each character in the font such that they are all
+       a consistent width. The padding is done such that the character
+       is centered in it's "cell", and any odd padding is the trailing edge.
+
+       NOTE: This should probably be considered experimental
 
 =back
 
@@ -234,7 +254,7 @@ C<perl -MText::FIGlet -e
 
 =head1 ENVIRONMENT
 
-Text::FIGlet will make use of these environment variables if present
+B<Text::FIGlet> will make use of these environment variables if present
 
 =over
 

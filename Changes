@@ -1,6 +1,24 @@
 Revision history for Perl extension Text::FIGlet, figlet.pl, minifig.pl
+1.04  Thu Nov 30 01:37:57 GMT 2000
+        - Decided to fix a bug where if you supplied -d and
+	  an absolute path for -f, you got what you deserved.
+	  But after eating my own dogfood; there is now a
+	  Webmin module that uses this ;-) Tastes great!
+	  Totally useless!; I found it was rather annoying.
+	- Fixed -w, it is now much smarter and wraps whole words
+	  where applicable en lieu of letters. It is still conceivable
+	  that it the output may overrun the requested outputwidth.
+	  If you run into this *LET ME KNOW* (text w/formatting, font),
+	  please. So I can determine if it's worth opening that can of worms.
+        - Seems I can't quite get this right...
+	  I bumped the VERSION to 1.03 in minifig.pl but FIGlet.pm
+	  was left at 1.02. Also neglected to increment the figlet.pl
+	  VERSION. And I left the timestamp off of the 1.03 entry below.
+	- Documented -help, added usage statement
+	- Added smush mode
+	  -F has been fixed and is now smush mode -0
 
-1.03
+1.03  Sun Nov 12 20:07 GMT 2000
 	- Version bumped to 1.03, 0.02 had $VERSION set to 1.02
 	- Added minifig.pl, a self contained figlet
 	- Added -help (it displays the builting pod)

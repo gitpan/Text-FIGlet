@@ -10,6 +10,13 @@ This package includes the module Text::FIGlet as well as
 NAME
     Text::FIGlet - a perl module to provide FIGlet abilities, akin to banner
 
+#But why?
+#Because I could. Because I like FIGlet and Perl.
+#But if you want something more substantive imagine:
+#  Running Apache and mod_perl create a Text::FIGlet object in your startup.pl
+#  Then figify text for the heads of Directory listings,
+#  and you look like anm FTP site ;-)
+
 SYNOPSIS
      my $font = Text::FIGlet-E<gt>new(-f=>"doh");
      $font->figify(-A=>"Hello World");

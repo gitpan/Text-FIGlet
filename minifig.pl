@@ -1,8 +1,10 @@
 #!/usr/bin/perl -s
 package Text::FIGlet;
-$VERSION = '1.03';
+$VERSION = '1.04';
 use Carp qw(carp croak);
 use File::Spec;
+use File::Basename qw(basename);
+use Text::Wrap;
 use strict;
 
 sub new{
@@ -22,7 +24,7 @@ sub _load_font($) {
     my(@header, $header, $font);
     local $_;
 
-    $font = File::Spec->catfile($self->{-d}, $self->{-f});
+    $font = File::Spec->catfile($self->{-d}, basename($self->{-f}));
     if( $self->{-f} ){
 	open(FLF, $font) || open(FLF, "$font.flf") || croak("$!: $font");
     }
@@ -73,15 +75,18 @@ sub _load_font($) {
 	_load_char($self, eval $1) || last;
     }
 
-    if( $self->{-F} ){
+    if( $self->{-m} eq '-0' ){
 	my $len;
 	foreach my $ord ( keys %{$self->{_font}} ){
 	    for(my $i=1; $i<=$self->{_header}->[1]; $i++ ){
 		$len = length($self->{_font}->{$ord}->[$i]);
-		$self->{_font}->{$ord}->[$i] =
-		    " " x int(($self->{_maxlen}-$len)/2) .
-			$self->{_font}->{$ord}->[$i] .
-			    " " x ($len-int(($self->{_maxlen}-$len)/2));
+		if( $self->{_maxlen} > $len ){
+		    $len = $self->{_maxlen} - $len;
+		    $self->{_font}->{$ord}->[$i] =
+			" " x int($len/2) .
+			    $self->{_font}->{$ord}->[$i] .
+				" " x ($len-int($len/2));
+		}
 	    }
 	    $self->{_font}->{$ord}->[0] = $self->{_maxlen};
 	}
@@ -96,15 +101,14 @@ sub _load_char($$){
 	local $_ = <FLF> || carp("Unexpected end of font file") && return 0;
 	$self->{_font}->{$i} .= $_;
 	$length = $length > length($_) ? $length : length($_);
-	if( $self->{-F} ){
+	if( $self->{-m} eq '-0' ){
+	    $length -= (s/(^\s+)|(\s+$)//g);
 	    $self->{_maxlen} = $length > $self->{_maxlen} ?
 		$length : $self->{_maxlen};
 	}
     }
     $self->{_font}->{$i} =~ /(.){2}$/;
     $self->{_font}->{$i} =~ s/$1|\015//g;
-#    #This will move to figify() once it supports smushing?
-    $self->{_font}->{$i} =~ s/$self->{_header}->[0]/ /g;
     $self->{_font}->{$i} = [$length-3, split($/, $self->{_font}->{$i})];
     return 1;
 }
@@ -119,34 +123,26 @@ sub figify{
     $opts{-w} ||= 80;
 
     #Do text formatting here...
-    if( $opts{-w} == 1 ){
-	@text = split(//, $opts{-A});
+    $opts{-A} =~ tr/\t/ /;
+    $opts{-A} =~  s%$/%\n%;
+    if( $opts{-m} eq '-0' ){
+	$Text::Wrap::columns = int($opts{-w} / $self->{_maxlen});
+	$opts{-A} = Text::Wrap::wrap('', '', $opts{-A}), "\n";
     }
     else{
-	@text = split($/, $opts{-A});
-    }
-    if( $opts{-w} > 1 ){
-	foreach my $line( @text ){
-	    my $length;
-	    my @lchars = map(ord($_), split('', $line));
-	    $buffer = '';
-	    foreach my $lchar (@lchars){
-		$length += $self->{_font}->{$lchar}->[0];
-		if( $length > $opts{-w} ){
-		    $length = $self->{_font}->{$lchar}->[0];
-		    $buffer .= $/ . chr($lchar);
-		}
-		else{
-		    $buffer .= chr($lchar);
-		}
-	    }
-	    $line = $buffer;
+	$Text::Wrap::columns = $opts{-w}+1;
+	@text = split(//, $opts{-A});
+	$opts{-A} = '';
+	foreach( @text ){
+	    $opts{-A} .= $_ . "\0" x ($self->{_font}->{ord($_)}->[0]-1);
 	}
-	$buffer = '';
-	@text = split($/, join($/, @text));
+        $opts{-A} = Text::Wrap::wrap('', '', $opts{-A}), "\n";
+	$opts{-A} =~ tr/\0//d;
     }
+    @text = split("\n", $opts{-A});
 
     foreach( @text ){
+	s/^\s*//o;
 	my @lchars = map(ord($_), split('', $_));
 	for(my $i=1; $i<=$self->{_header}->[1]; $i++){
 	    foreach my $lchar (@lchars){
@@ -160,12 +156,13 @@ sub figify{
 	    $buffer .= $/;
 	}
     }
+    $buffer =~ s/$self->{_header}->[0]/ /g;
     return $buffer;
 }
 package main;
 no strict;
-use vars qw($A $D $F $I1 $I2 $I3 $d $demo $f $help $w);
-$VERSION = '2.0';
+use vars qw($A $D $F $I1 $I2 $I3 $d $demo $f $help $m $w);
+$VERSION = '2.02';
 if( $help ){
     eval "use Pod::Text;";
     die("Unable to print man page: $@\n") if $@;
@@ -176,7 +173,7 @@ if($I1){
     die($VERSION*1000, "\n");
 }
 
-$font = Text::FIGlet->new(-D=>$D, -F=>$F, d=>$d, -f=>$f);
+$font = Text::FIGlet->new(-D=>$D, -F=>$F, -d=>$d, -m=>$m, -f=>$f);
 
 if($I2){
     die("$font->{-d}\n");
@@ -191,12 +188,12 @@ if( $demo ){
 }
 if( $A ){
     @ARGV = map($_ = $_ eq '' ? $/ : $_, @ARGV);
-    print $font->figify(-A=>join(' ', @ARGV), -w=>$w);
+    print $font->figify(-A=>join(' ', @ARGV), -m=>$m, -w=>$w);
 }
 else{
-    #complain if @ARGV;
+    Text::FIGlet::croak("Usage: minifig.pl -help") if @ARGV;
     while(<STDIN>){
-	print $font->figify(-A=>$_, -w=>$w);
+	print $font->figify(-A=>$_, -m=>$m, -w=>$w);
     }
 }
 __END__
@@ -211,11 +208,12 @@ minifig.pl - FIGlet in perl, akin to banner
 B<minifig.pl>
 [ B<-A> ]
 [ B<-D> ]
-[ B<-F> ]
 [ B<-d=>F<fontdirectory> ]
 [ B<-demo> ]
 [ B<-f=>F<fontfile> ]
-[ B<-w=>I<outputwidth>
+[ B<-help> ]
+[ B<-m=>I<smushmode> ]
+[ B<-w=>I<outputwidth> ]
 
 =head1 DESCRIPTION
 
@@ -237,6 +235,9 @@ having to dummy up standard input files.
 An empty character, obtained by two sequential  and
 empty quotes, results in a line break.
 
+To include text begining with - that might otherwise
+appear to be an invalid argument, use the argument --
+
 =item B<-D>
 
 Switches  to  the German (ISO 646-DE) character
@@ -245,14 +246,6 @@ U,  respectively.   `{',  `|' and `}' turn into the
 respective lower case versions of these.  `~' turns
 into  s-z. This option is deprecated, which means it
 may not appear in upcoming versions of FIGlet.
-
-=item B<-F>
-
-This will pad each character in the font such that they are all
-a consistent width. The padding is done such that the character
-is centered in it's "cell", and any odd padding is the trailing edge.
-
-NOTE: This should probably be considered experimental
 
 =item B<-I>I<infocode>
 
@@ -310,6 +303,30 @@ is not specified, FIGlet uses  the  font  that  was
 specified  when it was compiled.  To find out which
 font this is, use the B<I3> option.
 
+=item B<-m>I<smushmode>
+
+Specifies how FIGlet should ``smush'' and kern consecutive
+characters together.  On the command line,
+B<-m0> can be useful, as it tells FIGlet to kern characters
+without smushing them together.   Otherwise,
+this option is rarely needed, as a FIGlet font file
+specifies the best smushmode to use with the  font.
+B<-m>  is,  therefore,  most  useful to font designers
+testing the various  
+
+S<-1> Is currently the default, B<figlet>'s default is S<-2>
+
+S<-1>
+       No smushing or kerning.
+       Characters are simply concatenated together.
+
+S<-0>
+       This will pad each character in the font such that they are all
+       a consistent width. The padding is done such that the character
+       is centered in it's "cell", and any odd padding is the trailing edge.
+
+       NOTE: This should probably be considered experimental
+
 =item B<-w>=I<outputwidth>
 
 These  options  control  the  outputwidth,  or  the
@@ -330,6 +347,8 @@ is -1, it means to not warp.
 =head1 EXAMPLES
 
 C<minifig.pl -A Hello "" World>
+
+C<minifig.pl -m=-0 -demo>
 
 =head1 ENVIRONMENT
 

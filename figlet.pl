@@ -1,7 +1,7 @@
 #!/usr/bin/perl -s
-use vars qw($A $D $F $I1 $I2 $I3 $d $f $help $w);
+use vars qw($A $D $F $I1 $I2 $I3 $d $demo $f $help $m $w);
 use Text::FIGlet;
-$VERSION = '2.0';
+$VERSION = '2.02';
 if( $help ){
     eval "use Pod::Text;";
     die("Unable to print man page: $@\n") if $@;
@@ -21,14 +21,19 @@ if($I3){
     die("$font->{-f}\n");
 }
 
+if( $demo ){
+    print $font->figify(-A=>join('', map(chr($_), 33..127)), -w=>$w);
+    exit 0;
+}
+
 if( $A ){
     @ARGV = map($_ = $_ eq '' ? $/ : $_, @ARGV);
-    print $font->figify(-A=>join(' ', @ARGV), -w=>$w), "\n";
+    print $font->figify(-A=>join(' ', @ARGV), -m=>$m, -w=>$w), "\n";
 }
 else{
-    #complain if @ARGV;
+    Text::FIGlet::croak("Usage: figlet.pl -help") if @ARGV;
     while(<STDIN>){
-	print $font->figify(-A=>$_, -w=>$w), "\n";
+	print $font->figify(-A=>$_, -m=>$m, -w=>$w), "\n";
     }
 }
 __END__
@@ -47,7 +52,8 @@ B<figlet.pl>
 [ B<-d=>F<fontdirectory> ]
 [ B<-demo> ]
 [ B<-f=>F<fontfile> ]
-[ B<-w=>I<outputwidth>
+[ B<-help> ]
+[ B<-w=>I<outputwidth> ]
 
 =head1 DESCRIPTION
 
@@ -63,6 +69,9 @@ having to dummy up standard input files.
 
 An empty character, obtained by two sequential  and
 empty quotes, results in a line break.
+
+To include text begining with - that might otherwise
+appear to be an invalid argument, use the argument --
 
 =item B<-D>
 
@@ -137,6 +146,23 @@ is not specified, FIGlet uses  the  font  that  was
 specified  when it was compiled.  To find out which
 font this is, use the B<I3> option.
 
+=item B<-m>I<smushmode>
+
+Specifies how FIGlet should ``smush'' and kern consecutive
+characters together.  On the command line,
+B<-m0> can be useful, as it tells FIGlet to kern characters
+without smushing them together.   Otherwise,
+this option is rarely needed, as a FIGlet font file
+specifies the best smushmode to use with the  font.
+B<-m>  is,  therefore,  most  useful to font designers
+testing the various  
+
+Currently B<figlet.pl> only understands one smush mode,
+so you need not specify anything.
+
+S<-1> No smushing or kerning.
+       Characters are simply concatenated together.
+
 =item B<-w>=I<outputwidth>
 
 These  options  control  the  outputwidth,  or  the
@@ -157,6 +183,8 @@ is -1, it means to not warp.
 =head1 EXAMPLES
 
 C<figlet.pl -A Hello "" World>
+
+C<figlet.pl -m=-0 -demo>
 
 =head1 ENVIRONMENT
 

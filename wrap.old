@@ -1,0 +1,26 @@
+    if( $opts{-w} == 1 ){
+	@text = split(//, $opts{-A});
+    }
+    else{
+	@text = split($/, $opts{-A});
+    }
+    if( $opts{-w} > 1 ){
+	foreach my $line( @text ){
+	    my $length;
+	    my @lchars = map(ord($_), split('', $line));
+	    $buffer = '';
+	    foreach my $lchar (@lchars){
+		$length += $self->{_font}->{$lchar}->[0];
+		if( $length > $opts{-w} ){
+		    $length = $self->{_font}->{$lchar}->[0];
+		    $buffer .= $/ . chr($lchar);
+		}
+		else{
+		    $buffer .= chr($lchar);
+		}
+	    }
+	    $line = $buffer;
+	}
+	$buffer = '';
+	@text = split($/, join($/, @text));
+    }
