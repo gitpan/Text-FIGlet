@@ -4,7 +4,10 @@ MANIFEST
 Makefile.PL
 README
 TODO
+figlet.6
 figlet.pl
+minifig.pl
+minifig.HOWTO
 standard.flf
 test.pl
 test.txt

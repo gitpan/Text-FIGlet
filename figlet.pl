@@ -1,12 +1,18 @@
 #!/usr/bin/perl -s
-use vars qw($A $I1 $I2 $I3 $d $f $w);
+use vars qw($A $D $F $I1 $I2 $I3 $d $f $help $w);
 use Text::FIGlet;
 $VERSION = '2.0';
+if( $help ){
+    eval "use Pod::Text;";
+    die("Unable to print man page: $@\n") if $@;
+    pod2text(__FILE__);
+    exit 0;
+}
 if($I1){
     die($VERSION*1000, "\n");
 }
 
-$font = Text::FIGlet->new(-f=>$f, -d=>$d);
+$font = Text::FIGlet->new(-D=>$D, -F=>$F, -d=>$d, -f=>$f);
 
 if($I2){
     die("$font->{-d}\n");
@@ -36,7 +42,10 @@ figlet.pl - FIGlet in perl, akin to banner
 
 B<figlet.pl>
 [ B<-A> ]
+[ B<-D> ]
+[ B<-F> ]
 [ B<-d=>F<fontdirectory> ]
+[ B<-demo> ]
 [ B<-f=>F<fontfile> ]
 [ B<-w=>I<outputwidth>
 
@@ -44,43 +53,7 @@ B<figlet.pl>
 
 =over
 
-=item B<d>=F<fontdirectory>
-
-Change the default font  directory.   FIGlet  looks
-for  fonts  first in the default directory and then
-in the current directory.  If the <d> option is  not
-specified, FIGlet uses the directory that was specÅ≠
-ified when it was  compiled.   To  find  out  which
-directory this is, use the B<I2> option.
-
-=item B<f>=F<fontfile>
-
-Select the font.  The .flf suffix may be  left  off
-of  fontfile,  in  which  case FIGlet automatically
-appends it.  FIGlet looks for the file first in the
-default  font  directory  and  then  in the current
-directory, or, if fontfile  was  given  as  a  full
-pathname, in the given directory.  If the -f option
-is not specified, FIGlet uses  the  font  that  was
-specified  when it was compiled.  To find out which
-font this is, use the B<I3> option.
-
-=item B<w>=I<outputwidth>
-
-These  options  control  the  outputwidth,  or  the
-screen width FIGlet  assumes  when  formatting  its
-output.   FIGlet  uses the outputwidth to determine
-when to break lines and how to center  the  output.
-Normally,  FIGlet assumes 80 columns so that people
-with wide terminals won't annoy the people they  e-mail
-FIGlet output to. B<w> sets the  outputwidth 
-to  the  given integer.   An  outputwidth  of 1 is a
-special value that tells FIGlet to print each non-
-space  character, in its entirety, on a separate line,
-no matter how wide it is. Another special outputwidth
-is -1, it means to not warp.
-
-=item B<A>
+=item B<-A>
 
 All Words.  Once the  -  arguments  are  read,  all
 words  remaining  on  the  command  line  are  used
@@ -91,7 +64,24 @@ having to dummy up standard input files.
 An empty character, obtained by two sequential  and
 empty quotes, results in a line break.
 
-=item B<I> infocode
+=item B<-D>
+
+Switches  to  the German (ISO 646-DE) character
+set.  Turns `[', `\' and `]' into umlauted A, O and
+U,  respectively.   `{',  `|' and `}' turn into the
+respective lower case versions of these.  `~' turns
+into  s-z. This option is deprecated, which means it
+may not appear in upcoming versions of FIGlet.
+
+=item B<-F>
+
+This will pad each character in the font such that they are all
+a consistent width. The padding is done such that the character
+is centered in it's "cell", and any odd padding is the trailing edge.
+
+NOTE: This should probably be considered experimental
+
+=item B<-I>I<infocode>
 
 These   options  print  various  information  about FIGlet, then exit.
 
@@ -118,19 +108,59 @@ These   options  print  various  information  about FIGlet, then exit.
 3 Font.
 
        This will print the name of the font  FIGlet
-       would use.  It is affected by the -f option.
+       would use.  It is affected by the B<-f> option.
        This is not a filename; the ``.flf''  suffix
        is not printed.
+
+=item B<-d>=F<fontdirectory>
+
+Change the default font  directory.   FIGlet  looks
+for  fonts  first in the default directory and then
+in the current directory.  If the <d> option is  not
+specified, FIGlet uses the directory that was specÅ≠
+ified when it was  compiled.   To  find  out  which
+directory this is, use the B<I2> option.
+
+=item B<-demo>
+
+Outputs the ASCII codepage in the specified font.
+
+=item B<-f>=F<fontfile>
+
+Select the font.  The .flf suffix may be  left  off
+of  fontfile,  in  which  case FIGlet automatically
+appends it.  FIGlet looks for the file first in the
+default  font  directory  and  then  in the current
+directory, or, if fontfile  was  given  as  a  full
+pathname, in the given directory.  If the B<-f> option
+is not specified, FIGlet uses  the  font  that  was
+specified  when it was compiled.  To find out which
+font this is, use the B<I3> option.
+
+=item B<-w>=I<outputwidth>
+
+These  options  control  the  outputwidth,  or  the
+screen width FIGlet  assumes  when  formatting  its
+output.   FIGlet  uses the outputwidth to determine
+when to break lines and how to center  the  output.
+Normally,  FIGlet assumes 80 columns so that people
+with wide terminals won't annoy the people they  e-mail
+FIGlet output to. B<w> sets the  outputwidth 
+to  the  given integer.   An  outputwidth  of 1 is a
+special value that tells FIGlet to print each non-
+space  character, in its entirety, on a separate line,
+no matter how wide it is. Another special outputwidth
+is -1, it means to not warp.
 
 =back
 
 =head1 EXAMPLES
 
-figlet -A Hello "" World
+C<figlet.pl -A Hello "" World>
 
 =head1 ENVIRONMENT
 
-figlet.pl will make use of these environet variables if present
+figlet.pl will make use of these environment variables if present
 
 =over
 
@@ -149,7 +179,11 @@ The default location of fonts.
 
 FIGlet font files, these can be found at
 
- 
+ http://st-www.cs.uiuc.edu/users/chai/figlet.html
+ http://www.internexus.net/pub/figlet/
+ ftp://wuarchive.wustl.edu/graphics/graphics/misc/figlet/
+ ftp://ftp.plig.org/pub/figlet/
+
 
 =head1 SEE ALSO
 
@@ -157,6 +191,6 @@ L<figlet>, L<Text::FIGlet>
 
 =head1 AUTHOR
 
-Jerrad Pierce <belg4mit@mit.edu>/<webmaster@pthbb.rg>
+Jerrad Pierce <jpierce@cpan.org>/<webmaster@pthbb.rg>
 
 =cut

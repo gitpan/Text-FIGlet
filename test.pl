@@ -19,9 +19,9 @@ print "ok 1\n";
 # of the test code):
 open(IN, "test.txt") || warn("No sample output to compare against\n");
 while(<IN>){
-    chomp();
-    $txt .= $_ . $/;
+    $txt .= $_;
 }
+$/ = "\012";
 #print $txt;
 #print "="x80;
 #print Text::FIGlet->new(-d=>'.')->figify(-A=>"Hello World");

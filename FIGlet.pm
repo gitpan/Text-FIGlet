@@ -11,14 +11,14 @@ sub new{
     $self->{-f} ||= $ENV{FIGFONT} || 'standard';
     $self->{-d} ||= $ENV{FIGLIB}  || '/usr/games/lib/figlet/';
     #translate dir seperator in FIGLIB
-    $self->{_font} = _load_font($self);
+    _load_font($self);
     bless($self);
     return $self;
 }
 
 sub _load_font($) {
     my $self = shift();
-    my(@header, $header, %font, $font);
+    my(@header, $header, $font);
     local $_;
 
     $font = File::Spec->catfile($self->{-d}, $self->{-f});
@@ -34,47 +34,70 @@ sub _load_font($) {
 
     #Discard comments
     for(my $i=0; $i<$header[5]; $i++){
-        <FLF>;
+        <FLF> || carp("Unexpected end of font file") && last;
     }
 
     #Get ASCII characters
     for(my $i=32; $i<127; $i++){
-	_load_char(\%font, \@header, $i);
+	_load_char($self, $i) || last;
     }
 
     #German characters?
-    #-D
-    #for(91,92,93,123,124,125,126){
-    #_load_char(\%font, \@header, $i);
-    #}
+    unless( eof(FLF) ){
+	for(-255,-254,-253,-252,-251,-250,-249){
+	    _load_char($self, $_) || last;
+	}
+	if( $self->{-D} ){
+	    my %h = (91=>-255,92=>-254,93=>-253,123=>-252,124=>-251,125=>-250,126=>-249);
+	    while( my($k, $v) = each(%h) ){
+		$self->{_font}->{$k} = $self->{_font}->{$v};
+	    }
+	}
+    }
 
     #Extended characters, read extra line to get code
-    #until( eof() ){
-    #<FLF>
-    #/^(\d+)/
-    #_load_char(\%font, \@header, $1);
-    #}
+    until( eof(FLF) ){
+	$_ = <FLF> || carp("Unexpected end of font file") && last;
+	/^(\w+)/;
+	last unless $1;
+	_load_char($self, eval $1) || last;
+    }
 
-    return \%font;
+    if( $self->{-F} ){
+	my $len;
+	foreach my $ord ( keys %{$self->{_font}} ){
+	    for(my $i=1; $i<=$self->{_header}->[1]; $i++ ){
+		$len = length($self->{_font}->{$ord}->[$i]);
+		$self->{_font}->{$ord}->[$i] =
+		    " " x int(($self->{_maxlen}-$len)/2) .
+			$self->{_font}->{$ord}->[$i] .
+			    " " x ($len-int(($self->{_maxlen}-$len)/2));
+	    }
+	    $self->{_font}->{$ord}->[0] = $self->{_maxlen};
+	}
+    }
 }
 
 sub _load_char($$$){
-    my($font, $header, $i) = @_;
+    my($self, $i) = @_;
 
     my $length;
-    for(my $j=0; $j<$header->[1]; $j++){
-	local $_ = <FLF>;
-	$font->{$i} .= $_;
+    for(my $j=0; $j<$self->{_header}->[1]; $j++){
+	local $_ = <FLF> || carp("Unexpected end of font file") && return 0;
+	$self->{_font}->{$i} .= $_;
 	$length = $length > length($_) ? $length : length($_);
-# XXX Bail if eof() ?!
+	if( $self->{-F} ){
+	    $self->{_maxlen} = $length > $self->{_maxlen} ?
+		$length : $self->{_maxlen};
 	}
-    $font->{$i} =~ /(.){2}$/;
-    $font->{$i} =~ s/$1|\015//g;
-#    #This will move to figify() once it supports kerning and smushing?
-    $font->{$i} =~ s/$header->[0]/ /g;
-    $font->{$i} = [$length-3, split($/, $font->{$i})];
+    }
+    $self->{_font}->{$i} =~ /(.){2}$/;
+    $self->{_font}->{$i} =~ s/$1|\015//g;
+#    #This will move to figify() once it supports smushing?
+    $self->{_font}->{$i} =~ s/$self->{_header}->[0]/ /g;
+    $self->{_font}->{$i} = [$length-3, split($/, $self->{_font}->{$i})];
+    return 1;
 }
-
 
 sub figify{
     my $self = shift();
@@ -147,13 +170,31 @@ C<new>
 
 =over
 
-=item B<d>
+=item B<-D=E<gt>>I<boolean>
+
+If true, switches  to  the German (ISO 646-DE) character
+set.  Turns `[', `\' and `]' into umlauted A, O and
+U,  respectively.   `{',  `|' and `}' turn into the
+respective lower case versions of these.  `~' turns
+into  s-z. Assumin, of course, that the font author
+included these characters. This option is deprecated, which means it
+may not appear in upcoming versions of FIGlet.
+
+=item B<-F=E<gt>>I<boolean>
+
+This will pad each character in the font such that they are all
+a consistent width. The padding is done such that the character
+is centered in it's "cell", and any odd padding is the trailing edge.
+
+NOTE: This should probably be considered experimental
+
+=item B<-d=E<gt>>F<fontdir>
 
 Whence to load the font.
 
 Defaults to F</usr/games/lib/figlet.dir>
 
-=item B<f>
+=item B<-f=E<gt>>F<fontfile>
 
 The font to load.
 
@@ -165,11 +206,11 @@ C<figify>
 
 =over
 
-=item B<A>
+=item B<-A=E<gt>>I<text>
 
 The text to transmogrify.
 
-=item B<w>
+=item B<-w=E<gt>>I<outputwidth>
 
 The output width, output text is wrapped to this value by breaking the
 input on whitspace where possible. There are two special width values
@@ -193,7 +234,7 @@ C<perl -MText::FIGlet -e
 
 =head1 ENVIRONMENT
 
-Text::FIGlet will make use of these environet variables if present
+Text::FIGlet will make use of these environment variables if present
 
 =over
 
@@ -238,6 +279,6 @@ Consequently, make sure it is set appropriately i.e.;
 
 =head1 AUTHOR
 
-Jerrad Pierce <belg4mit@mit.edu>/<webmaster@pthbb.rg>
+Jerrad Pierce <jpierce@cpan.org>/<webmaster@pthbb.rg>
 
 =cut

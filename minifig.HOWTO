@@ -1,0 +1,70 @@
+Replace the __DATA__ section of the minifig.pl that ships with this package
+with your choice of font.
+
+OR
+
+1. Start with a shebang
+	a. UNIX
+	   #!/usr/bin/perl -s
+
+	b. DOG  
+	   @rem = '--*-Perl-*--
+	   @echo off
+	   if "%OS%" == "Windows_NT" goto WinNT
+	   perl -x -s -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+	   goto endofperl
+	   :WinNT
+	   perl -x -s -S "%0" %*
+	   if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
+	   if %errorlevel% == 9009 echo You d
+	c. Whatever your OS equivalent is
+
+    Note the -s
+
+2. Append FIGlet.pm, removing __END__ and everything after.
+
+3. Apply this pseudo-patch
+ package Text::FIGlet;
+-$VERSION = '1.02';
++$VERSION = '1.03';
+ use Carp qw(carp croak);
+ use File::Spec;
+ use strict;
+@@ -8,7 +9,7 @@
+     shift();
+     my $self = {@_};
+ 
+-    $self->{-f} ||= $ENV{FIGFONT} || 'standard';
++    $self->{-f} ||= $ENV{FIGFONT};
+     $self->{-d} ||= $ENV{FIGLIB}  || '/usr/games/lib/figlet/';
+     $self->{_font} = _load_font($self);
+@@ -22,7 +23,17 @@
+     local $_;
+ 
+     $font = File::Spec->catfile($self->{-d}, $self->{-f});
+-    open(FLF, $font) || open(FLF, "$font.flf") || croak("$!: $font");
++    if( $self->{-f} ){
++	open(FLF, $font) || open(FLF, "$font.flf") || croak("$!: $font");
++    }
++    else{
++	*FLF = *main::DATA;
++	while( <DATA> ){
++	    last if /__DATA__/;
++	}
++    }
++
+     chomp($header = <FLF>);
+     croak("Invalid figlet 2 font") unless $header =~ /^flf2/;
+
+4. Append
+	   package main;
+	   no strict;
+
+5. Append figlet.pl, removing lines 1 and 3
+
+6. Append
+	   __DATA__
+
+7. Append your favorite default font, the shipping minifig uses mini
+
+8. Pat yourself on the back

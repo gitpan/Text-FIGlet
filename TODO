@@ -1,4 +1,11 @@
-1.0.2
+1.03
+	- Better line wrapping
+	- justification? (-c, -l, -r, -x)
+	- orientation (rtol)
+	- smushing? (-m)
+	- control files?
+	- make -F smarter
+0.02
 	- Better line wrapping
 	- German (-D)
 	- justification? (-c, -l, -r, -x)
