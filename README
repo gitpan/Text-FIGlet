@@ -1,0 +1,32 @@
+perl Makefile.PL
+make test
+make install
+./figlet.pl -f standard -d .
+
+This package includes the module, figlet.pl, and the default font standard.flf
+a script to emulate the FIGlet command using Text::FIGlet.
+
+NAME
+    Text::FIGlet - a perl module to provide FIGlet abilities, akin to banner
+
+SYNOPSIS
+     my $font = Text::FIGlet-E<gt>new(-f=>"doh");
+     $font->figify(-A=>"Hello World");
+
+#figlet -A Hello World
+ _   _      _ _        __        __         _     _ 
+| | | | ___| | | ___   \ \      / /__  _ __| | __| |
+| |_| |/ _ \ | |/ _ \   \ \ /\ / / _ \| '__| |/ _` |
+|  _  |  __/ | | (_) |   \ V  V / (_) | |  | | (_| |
+|_| |_|\___|_|_|\___/     \_/\_/ \___/|_|  |_|\__,_|
+
+
+figlet.pl is still in it's infancy and does not do smushing,
+among other things.
+
+#figlet.pl -A Hello World
+ _   _        _  _         __        __              _      _ 
+| | | |  ___ | || |  ___   \ \      / /  ___   _ __ | |  __| |
+| |_| | / _ \| || | / _ \   \ \ /\ / /  / _ \ | '__|| | / _` |
+|  _  ||  __/| || || (_) |   \ V  V /  | (_) || |   | || (_| |
+|_| |_| \___||_||_| \___/     \_/\_/    \___/ |_|   |_| \__,_|

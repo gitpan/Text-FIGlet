@@ -1,0 +1,6 @@
+1.0.2
+	- Better line wrapping
+	- German (-D)
+	- justification? (-c, -l, -r, -x)
+	- orientation (rtol)
+	- smushing? (-m)
