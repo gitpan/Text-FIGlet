@@ -1,27 +1,35 @@
-perl Makefile.PL
-make test
-make install
-./figlet.pl -f standard -d .
-
 This package includes the module Text::FIGlet as well as
-     the scripts figlet.pl and minifig.pl (dicusssed below)
-     the default font standard.flf
+several scripts which use it, as well as the default
+FIGlet font standard.flf.
 
 NAME
     Text::FIGlet - a perl module to provide FIGlet abilities, akin to banner
-
-#But why?
-#Because I could. Because I like FIGlet and Perl.
-#But if you want something more substantive imagine:
-#  Running Apache and mod_perl create a Text::FIGlet object in your startup.pl
-#  Then figify text for the heads of Directory listings,
-#  and you look like an FTP site ;-)
 
 SYNOPSIS
      my $font = Text::FIGlet-E<gt>new(-f=>"doh");
      $font->figify(-A=>"Hello World");
 
-figlet.pl is a script to emulate the FIGlet command using Text::FIGlet.
+DESCRIPTION
+
+     But why?
+
+     Because I could.
+
+     But why?
+
+     Because I like FIGlet and Perl.
+
+     But why? In Bob's name WHY?! What purpose could it serve?
+
+     If you want something more substantive imagine:
+         * Run Apache with mod_perl
+         * In F<startup.pl> create a Text::FIGlet object
+         * figify text for the heads of Directory listings,
+           and you look like an FTP site ;-)
+
+     Or not, I just make the scissors, now run along.
+
+EXAMPLES
 
 % figlet -A Hello World
  _   _      _ _        __        __         _     _ 
@@ -31,9 +39,6 @@ figlet.pl is a script to emulate the FIGlet command using Text::FIGlet.
 |_| |_|\___|_|_|\___/     \_/\_/ \___/|_|  |_|\__,_|
 
 
-figlet.pl is still in it's childhood and does not yet do smushing,
-among other things.
-
 % figlet.pl -A Hello World
  _   _        _  _         __        __              _      _ 
 | | | |  ___ | || |  ___   \ \      / /  ___   _ __ | |  __| |
@@ -41,9 +46,12 @@ among other things.
 |  _  ||  __/| || || (_) |   \ V  V /  | (_) || |   | || (_| |
 |_| |_| \___||_||_| \___/     \_/\_/    \___/ |_|   |_| \__,_|
 
+figlet.pl is still in it's childhood and does not yet do smushing,
+among other things.
+
 minifig.pl is a self-contained version of figlet.pl
 It requires nothing more than a standard Perl distribution.
-For more information about minifig.pl see minifig.pl --help,
+For more information about minifig.pl see minifig.pl -help,
 and minifig.HOWTO on customizing it.
 
 % minifig.pl -A Hello World
@@ -52,4 +60,9 @@ and minifig.HOWTO on customizing it.
 | | (/_ | | (_)    \/\/  (_) |  | (_|
 
 
-NOTE: Both figlet.pl and minifig.pl require that Perl be invoked with -s
+INSTALLATION
+
+perl Makefile.PL
+make test
+make install
+./figlet.pl -f standard -d .

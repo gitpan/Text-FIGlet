@@ -1,49 +1,65 @@
-#!/usr/bin/perl -s
-use vars qw($A $D $I1 $I2 $I3 $L $R $X $c $d $demo $f $help $l $m $r $w $x);
+#!/usr/bin/perl
+use strict;
+use vars qw($VERSION $REVISION);
 use Text::FIGlet;
-$VERSION = '2.1';
-if( $help ){
+$VERSION = '2.1';   #This is which figlet we are supposed to behave like
+$REVISION = '1.06'; #This is build of the package/this component
+
+my %opts;
+$opts{$_} = undef for
+  qw(A D E L R X c h help -help l r x);
+$opts{$_} = "0 but true" for
+  qw(I d f m w);
+for(my $i=0; $i <= scalar @ARGV; $i++){
+  shift && last if $ARGV[$i] eq '--';
+  foreach my $key ( sort { length($b)-length($a) } keys %opts){
+    if( $ARGV[$i] =~ /^-$key=?(.*)/ ){      
+      shift; $i--;
+      $opts{$key} = defined($1) && $1 ne '' ?
+	$1 : defined($opts{$key}) ? do{$i--; shift} : 1;
+      last;
+    }
+  }
+}
+$_ eq '0 but true' && ($_ = undef) for values %opts;
+if( $opts{help}||$opts{h}||$opts{-help} ){
     eval "use Pod::Text;";
     die("Unable to print man page: $@\n") if $@;
     pod2text(__FILE__);
     exit 0;
 }
-if($I1){
+
+
+if( $opts{I} == 1 ){
     die($VERSION*1000, "\n");
 }
 
-$font = Text::FIGlet->new(-D=>$D&!$E, -d=>$d, -m=>$m, -f=>$f);
+my $font = Text::FIGlet->new(-D=>$opts{D}&!$opts{E},
+			  -d=>$opts{d},
+			  -m=>$opts{m},
+			  -f=>$opts{f});
 
-if($I2){
+if( $opts{I} == 2 ){
     die("$font->{-d}\n");
 }
-if($I3){
+if( $opts{I} == 3 ){
     die("$font->{-f}\n");
 }
-if( $demo ){
-    print $font->figify(-A=>join('', map(chr($_), 33..127)),
-			-X=>($L&&'L')||($R&&'R'),
-			-m=>$m,
-			-w=>$w,
-			-x=>($l&&'l')||($c&&'c')||($r&&'r'));
+
+my %figify = (
+	      -X=>($opts{L}&&'L')||($opts{R}&&'R'),
+	      -m=>$opts{m},
+	      -w=>$opts{w},
+	      -x=>($opts{l}&&'l')||($opts{c}&&'c')||($opts{r}&&'r') );
+if( $opts{A} ){
+    @ARGV = map($_ = $_ eq '' ? $/ : $_, @ARGV);
+    print $font->figify(-A=>join(' ', @ARGV), %figify);
     exit 0;
 }
-if( $A ){
-    @ARGV = map($_ = $_ eq '' ? $/ : $_, @ARGV);
-    print $font->figify(-A=>join(' ', @ARGV),
-			-X=>($L&&'L')||($R&&'R'),
-			-m=>$m,
-			-w=>$w,
-			-x=>($l&&'l')||($c&&'c')||($r&&'r'));
-}
 else{
-    Text::FIGlet::croak("Usage: minifig.pl -help") if @ARGV;
+    Text::FIGlet::croak("Usage: figlet.pl -help\n") if @ARGV;
     while(<STDIN>){
-	print $font->figify(-A=>$_,
-			    -X=>($L&&'L')||($R&&'R'),
-			    -m=>$m,
-			    -w=>$w,
-			    -x=>($l&&'l')||($c&&'c')||($r&&'r'));
+	print $font->figify(-A=>$_, %figify);
     }
 }
 __END__
@@ -64,7 +80,6 @@ B<figlet.pl>
 [ B<-X> ]
 [ B<-c> ]
 [ B<-d=>F<fontdirectory> ]
-[ B<-demo> ]
 [ B<-f=>F<fontfile> ]
 [ B<-help> ]
 [ B<-l> ]
@@ -73,6 +88,28 @@ B<figlet.pl>
 [ B<-x> ]
 
 =head1 DESCRIPTION
+
+FIGlet  prints its input using large characters made up of
+ordinary screen characters.  FIGlet  output  is  generally
+reminiscent of the sort of "signatures" many people like
+to put at the end of e-mail and UseNet  messages.   It  is
+also  reminiscent  of  the output of some banner programs,
+although it is oriented normally, not sideways.
+
+FIGlet can print in a variety of fonts, both left-to-right
+and  right-to-left,  with  adjacent  characters kerned and
+"smushed" together in various ways.   FIGlet  fonts  are
+stored  in  separate files, which can be identified by the
+suffix ".flf".  Most FIGlet font files will be stored in
+FIGlet's default font directory.
+
+FIGlet  can  also  use "control files", which tell it to
+map certain input characters to certain other  characters,
+similar  to  the  Unix  tr  command.  Control files can be
+identified by the suffix ".flc".   Most  FIGlet  control
+files will be stored in FIGlet's default font directory.
+
+=head1 OPTIONS
 
 =over
 
@@ -166,10 +203,6 @@ specified, FIGlet uses the directory that was specified
 when it was  compiled.   To  find  out  which
 directory this is, use the B<-I2> option.
 
-=item B<-demo>
-
-Outputs the ASCII codepage in the specified font.
-
 =item B<-f>=F<fontfile>
 
 Select the font.  The .flf suffix may be  left  off
@@ -191,7 +224,8 @@ without smushing them together.   Otherwise,
 this option is rarely needed, as a FIGlet font file
 specifies the best smushmode to use with the  font.
 B<-m>  is,  therefore,  most  useful to font designers
-testing the various  
+testing the various smushmodes  with  their  font.
+smushmode can be -2 through 63.
 
 S<-2>
        Get mode from font file (default).
@@ -276,6 +310,6 @@ L<figlet>, L<Text::FIGlet>
 
 =head1 AUTHOR
 
-Jerrad Pierce <jpierce@cpan.org>/<webmaster@pthbb.rg>
+Jerrad Pierce <jpierce@cpan.org>|<webmaster@pthbb.org>
 
 =cut

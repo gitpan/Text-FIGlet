@@ -1,149 +1,144 @@
 package Text::FIGlet;
-$VERSION = '1.05';
+$VERSION = '1.06';
 use 5;
 use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(basename);
 use Text::Wrap;
 use strict;
+use vars '$REwhite';
 
 sub new{
-    shift();
-    my $self = {@_};
+  shift();
+  my $self = {@_};
 
-    $self->{-f} ||= $ENV{FIGFONT} || 'standard';
-    $self->{-d} ||= $ENV{FIGLIB}  || '/usr/games/lib/figlet/';
-    #translate dir seperator in FIGLIB
-    _load_font($self);
-    bless($self);
-    return $self;
+  $self->{-f} ||= $ENV{FIGFONT} || 'standard';
+  $self->{-d} ||= $ENV{FIGLIB}  || '/usr/games/lib/figlet/';
+  #translate dir seperator in FIGLIB
+  _load_font($self);
+  bless($self);
+  return $self;
 }
 
-sub _load_font($) {
-    my $self = shift();
-    my(@header, $header, $font);
-    local $_;
+sub _load_font{
+  my $self = shift();
+  my(@header, $header, $font);
+  local $_;
 
-    $font = File::Spec->catfile(
-			      File::Spec->file_name_is_absolute($self->{-f}) ?
-				'' : $self->{-d},
-			      File::Spec->file_name_is_absolute($self->{-f}) ?
-				$self->{-f} : basename($self->{-f}) );
-    open(FLF, $font) || open(FLF, "$font.flf") || croak("$!: $font");
+  $self->{_file} = $font = (-f $self->{-f} && $self->{-f})||
+    (-f File::Spec->rel2abs($self->{-f}) && File::Spec->rel2abs($self->{-f}))||
+      File::Spec->catfile($self->{-d}, $self->{-f});
+  open(FLF, $font) || open(FLF, "$font.flf") || croak("$!: $font");
 
-    chomp($header = <FLF>);
-    croak("Invalid figlet 2 font") unless $header =~ /^flf2/;
+  chomp($header = <FLF>);
+  croak("Invalid figlet 2 font") unless $header =~ /^flf2/;
 
-    #flf2ahardblank height up_ht maxlen smushmode cmt_count rtol
-    @header = split(/\s+/, $header);
-    $header[0] =~ s/^flf2.//;
-    $header[0] = quotemeta($header[0]);
-    $self->{_header} = \@header;
+  #flf2ahardblank height up_ht maxlen smushmode cmt_count rtol
+  @header = split(/\s+/, $header);
+  $header[0] =~ s/^flf2.//;
+  $header[0] = quotemeta($header[0]);
+  $self->{_header} = \@header;
 
-    unless( defined($self->{-m}) || $self->{-m} eq '-2' ){
-	$self->{-m} = $header[4];
+  unless( defined($self->{-m}) || $self->{-m} eq '-2' ){
+    $self->{-m} = $header[4];
+  }
+
+  #Discard comments
+  <FLF> for 1 .. $header[5] || carp("Unexpected end of font file") && last;
+
+  $REwhite = qr/(^?:\s+)|(?:\s+(?=$header[0]*\s*$))/;
+  #Get ASCII characters
+  foreach my $i(32..126){
+    &_load_char($self, $i) || last;
+  }
+
+  #German characters?
+  unless( eof(FLF) ){
+    foreach my $k (qw(91 92 93 123 124 125 126)){
+      if( $self->{-D} ){
+	$self->{_font}->[$k] = '';
+	&_load_char($self, $k) || last;
+      }
+      else{
+	#do some reads to discard them
+	<FLF> for 1 .. $header[1];
+      }
     }
+  }
 
-    #Discard comments
-    for(my $i=0; $i<$header[5]; $i++){
-        <FLF> || carp("Unexpected end of font file") && last;
-    }
+  #Extended characters, read extra line to get code
+  until( eof(FLF) ){
+    $_ = <FLF> || carp("Unexpected end of font file") && last;
+    /^(\w+)/;
+    last unless $1;
+    &_load_char($self, $1 =~ /^0x/ ? hex $1 : $1) || last;
+  }
+  close(FLF);
 
-    #Get ASCII characters
-    for(my $i=32; $i<127; $i++){
-	_load_char($self, $i) || last;
+  if( $self->{-m} eq '-0' ){
+    my $pad;
+    for(my $ord=0; $ord < scalar @{$self->{_font}}; $ord++){
+      foreach my $i (3..$header[1]+2){
+        next unless exists($self->{_font}->[$ord]->[2]);
+  	$pad = $self->{_maxLen} - length($self->{_font}->[$ord]->[$i]);
+  	$self->{_font}->[$ord]->[$i] = " " x int($pad/2) .
+  	  $self->{_font}->[$ord]->[$i] . " " x ($pad-int($pad/2));
+      }
     }
+  }
 
-    #German characters?
-    unless( eof(FLF) ){
-	foreach my $k (qw(91 92 93 123 124 125 126)){
-	    if( $self->{-D} ){
-		$self->{_font}->[$k] = '';
-		_load_char($self, $k) || last;
-	    }
-	    else{
-		#do some reads to discard them
-		map(<FLF>, 1 .. $self->{_header}->[1]);
-	    }
-	}
+  if( $self->{-m} > -1 && $self->{-m} ne '-0' ){
+    for(my $ord=0; $ord < scalar @{$self->{_font}}; $ord++){
+      foreach my $i (3..$header[1]+2){
+	 $self->{_font}->[$ord]->[$i] =~
+	   s/^\s{0,$self->{_font}->[$ord]->[1]}//;
+	 $self->{_font}->[$ord]->[$i] =~
+	   s/[$header[0]\s]{$self->{_font}->[$ord]->[2]}$//;
+      }
     }
-
-    #Extended characters, read extra line to get code
-    until( eof(FLF) ){
-	$_ = <FLF> || carp("Unexpected end of font file") && last;
-	/^(\w+)/;
-	last unless $1;
-	_load_char($self, eval $1) || last;
-    }
-
-    if( $self->{-m} eq '-0' ){
-	my $len;
-	for(my $ord=0; $ord < scalar @{$self->{_font}}; $ord++){
-	    for(my $i=1; $i<=$self->{_header}->[1]; $i++ ){
-		$len = length($self->{_font}->[$ord]->[$i]);
-		if( $self->{_maxLen} > $len ){
-		    $len = $self->{_maxLen} - $len;
-		    $self->{_font}->[$ord]->[$i] =
-			" " x int($len/2) .
-			    $self->{_font}->[$ord]->[$i] .
-				" " x ($len-int($len/2));
-		}
-	    }
-	    $self->{_font}->[$ord]->[0]->{maxLen} = $self->{_maxLen};
-	}
-    }
-
-    if( $self->{-m} > -1 && $self->{-m} ne '-0' ){
-	for(my $ord=0; $ord < scalar @{$self->{_font}}; $ord++){
-	    for(my $i=1; $i<=$self->{_header}->[1]; $i++ ){
-		$self->{_font}->[$ord]->[$i] =~
-		    s/^\s{0,$self->{_font}->[$ord]->[0]->{wLead}}//;
-		$self->{_font}->[$ord]->[$i] =~
-		    s/[$self->{_header}->[0]\s]{$self->{_font}->[$ord]->[0]->{wTrail}}$//;
-	    }
-	}
-    }
+  }
 }
 
-sub _load_char($$){
-    my($self, $i) = @_;
-    my($length, $wLead, $wTrail,  $end, $line);
-
-    $wLead = $wTrail = $self->{_header}->[2];
-
-    for(my $j=0; $j<$self->{_header}->[1]; $j++){
-	$line = local $_ = <FLF> ||
-	    carp("Unexpected end of font file") && return 0;
-
-	($end) = /(.)\s*$/;
-	if( $wLead && /^(\s+)/ ){
-	    $wLead = length($1) < $wLead ? length($1) : $wLead;
-	}
-	else{
-	    $wLead = 0;
-	}
-	if( $wTrail && /([$self->{_header}->[0]\s]+)$end+\s*$/ ){
-	    $wTrail = length($1) < $wTrail ? length($1) : $wTrail;
-	}
-	else{
-	    $wTrail = 0; }
-	$length = $length > length($_) ? $length : length($_);
-	if( $self->{-m} eq '-0' ){
-	    s/$self->{_header}->[0]/ /g;
-	    $line = $_;
-	    $length -= (s/(^\s+)|(\s+$end*\s*$)//g);
-	    $self->{_maxLen} = $length > $self->{_maxLen} ?
-		$length : $self->{_maxLen};
-	}
-	$self->{_font}->[$i] .= $line;
+sub _load_char{
+  my($self, $i) = @_;
+  my($length, $wLead, $wTrail, $end, $line, $l);
+  
+  $wLead = $wTrail = $self->{_header}->[3];
+  
+  my $REtrail;
+  foreach my $j (0..$self->{_header}->[1]-1){
+    $line = $_ = <FLF> ||
+      carp("Unexpected end of font file") && return 0;
+    #This is the end.... this is the end my friend
+    unless( $REtrail ){
+      /(.)\s*$/;
+      $end = $1;
+      $REtrail = qr/([ $self->{_header}->[0]]+)$end{1,2}\s*$/;
     }
-    $self->{_font}->[$i] =~ /(.){2}$/;
-    $self->{_font}->[$i] =~ s/$1|\015//g;
-    $self->{_font}->[$i] = [{maxLen=>$length-3,
-			     wLead=>$wLead,
-			     wTrail=>$wTrail},
-			    split($/, $self->{_font}->[$i])];
-    return 1;
+    if( $wLead && s/^(\s+)// ){
+      $wLead  = $l if ($l = length($1)) < $wLead;
+    }
+    else{
+      $wLead  = 0;
+    }
+    if( $wTrail && /$REtrail/ ){
+      $wTrail = $l if ($l = length($1)) < $wTrail;
+    }
+    else{
+      $wTrail = 0; }
+    $length   = $l if ($l = length($_)-1-(s/$end/$end/og)) > $length;
+    $self->{_font}->[$i] .= $line;
+  }
+  $self->{_maxLen} = $length if $self->{_maxLen} < $length;
+
+
+  #Ideally this would be /o but then all figchar's must have same EOL
+  $self->{_font}->[$i] =~ s/$end|\015//g;
+  $self->{_font}->[$i] = [$length,#maxLen
+			  $wLead, #wLead
+			  $wTrail,#wTrail
+			  split($/, $self->{_font}->[$i])];
+  return 1;
 }
 
 
@@ -166,15 +161,18 @@ sub figify{
     $opts{-A} =~ tr/\t/ /;
     $opts{-A} =~  s%$/%\n%;
     if( $opts{-m} eq '-0' ){
-	$Text::Wrap::columns = int($opts{-w} / $self->{_maxLen});
-	$opts{-A} = Text::Wrap::wrap('', '', $opts{-A}), "\n";
+	$Text::Wrap::columns = int($opts{-w} / $self->{_maxLen})+1;
+	$Text::Wrap::columns =2 if $Text::Wrap::columns < 2;
+	$opts{-A} = Text::Wrap::wrap('', '', $opts{-A});
     }
     else{
 	$Text::Wrap::columns = $opts{-w}+1;
-	@text = split(//, $opts{-A});
-	$opts{-A} = '';
-	foreach( @text ){
-	    $opts{-A} .= $_ . "\0" x ($self->{_font}->[ord($_)]->[0]->{maxLen}-1);
+	unless( $opts{-w} == 1 ){
+	  @text = split(//, $opts{-A});
+	  $opts{-A} = '';
+	  foreach( @text ){
+	    $opts{-A} .= "\0" x ($self->{_font}->[ord($_)]->[0]-1) . $_;
+	  }
 	}
         $opts{-A} = Text::Wrap::wrap('', '', $opts{-A}), "\n";
 	$opts{-A} =~ tr/\0//d;
@@ -185,7 +183,7 @@ sub figify{
     foreach( @text ){
 	s/^\s*//o;
 	my @lchars = map(ord($_), split('', $_));
-	for(my $i=1; $i<=$self->{_header}->[1]; $i++){
+	foreach my $i (3..$self->{_header}->[1]+2){
 	    my $line;
 	    foreach my $lchar (@lchars){
 		if( $self->{_font}->[$lchar] ){
@@ -194,12 +192,11 @@ sub figify{
 		else{
 		    $line .= $self->{_font}->[32]->[$i];
 		}
-		if( $self->{-m} ne '-0' ){
-		    $line =~ s/$self->{_header}->[0]/ /g; }
+		$line =~ s/$self->{_header}->[0]/ /g;
 	    }
 
 
-	    #Do some more text formatting here...
+	    #Do some more text formatting here... (smushing)
 	    if( $opts{-x} ne 'l' ){
 		$opts{-x} ||= $opts{-X} eq 'R' ? 'r' : 'l';
 	    }
@@ -227,6 +224,33 @@ Text::FIGlet - a perl module to provide FIGlet abilities, akin to banner
  $font->figify(-A=>"Hello World");
 
 =head1 DESCRIPTION
+
+But why?
+
+Because I could.
+
+But why?
+
+Because I like FIGlet and Perl.
+
+But why? In Bob's name WHY?! What purpose could it serve?
+
+If you want something more substantive imagine:
+
+=over
+
+=item * Run Apache with mod_perl
+
+=item * In F<startup.pl> create a Text::FIGlet object
+
+=item * figify text for the heads of Directory listings,
+      and you look like an FTP site ;-)
+
+Or not, I just make the scissors, now run along.
+
+=back 
+
+=head1 OPTIONS
 
 C<new>
 
@@ -263,7 +287,8 @@ without smushing them together.   Otherwise,
 this option is rarely needed, as a B<Text::FIGlet> font file
 specifies the best smushmode to use with the  font.
 B<-m>  is,  therefore,  most  useful to font designers
-testing the various  
+testing the various smushmodes  with  their  font.
+smushmode can be -2 through 63.
 
 S<-2>
        Get mode from font file (default).
@@ -300,30 +325,23 @@ C<figify>
 
 The text to transmogrify.
 
-=item B<-L>
-B<-R>
-B<-X>
+=item B<-X=E<gt>>[LR]
 
 These  options  control whether FIGlet prints
-left-to-right or  right-to-left. B<-L> selects
-left-to-right printing. B<-R> selects right-to-left printing.
-B<-X> (default) makes FIGlet use whichever is specified
-in the font file.
+left-to-right or  right-to-left. B<L> selects
+left-to-right printing. B<R> selects right-to-left printing.
+The default is to use whatever is specified in the font file.
 
-=item B<-c>
-B<-l>
-B<-r>
-B<-x>
+=item B<-x=E<gt>>[lrc]
 
 These  options  handle  the justification of B<Text::FIGlet>
-output.  B<-c> centers the  output  horizontally.   B<-l>
-makes  the  output  flush-left.  B<-r> makes it flush-
-right.  B<-x> (default) sets the justification according
+output.  B<c> centers the  output  horizontally.   B<l>
+makes  the  output  flush-left.  B<r> makes it flush-
+right.  The default sets the justification according
 to whether left-to-right or right-to-left text
 is selected.  Left-to-right  text  will  be  flush-
 left, while right-to-left text will be flush-right.
-(Left-to-rigt versus right-to-left  text  is  controlled by B<-L>,
-B<-R> and B<-X>.)
+(Left-to-rigt versus right-to-left  text  is  controlled by B<-X>.)
 
 =item B<-w=E<gt>>I<outputwidth>
 
@@ -333,14 +351,9 @@ input on whitspace where possible. There are two special width values
  -1 the text is not wrapped.
   1 the text is wrapped after very character.
 
-NOTE: This currently broken, it wraps to width
-but breaks on the nearest input character,
-not necessarily whitespace.
-
 Defaults to 80
 
 =back
-
 
 =head1 EXAMPLES
 
@@ -387,9 +400,15 @@ L<figlet>
 
 =item $/ is used to 
 
- split incoming text into seperate lines.
- item create the output string
- item parse the font file
+=over
+
+=item split incoming text into seperate lines.
+
+=item create the output string
+
+=item parse the font file
+
+=back
 
 =back
 
@@ -398,6 +417,6 @@ Consequently, make sure it is set appropriately i.e.;
 
 =head1 AUTHOR
 
-Jerrad Pierce <jpierce@cpan.org>|<webmaster@pthbb.rg>
+Jerrad Pierce <jpierce@cpan.org>|<webmaster@pthbb.org>
 
 =cut

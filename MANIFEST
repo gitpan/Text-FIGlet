@@ -1,13 +1,15 @@
-Changes
+CHANGES
 FIGlet.pm
 MANIFEST
 Makefile.PL
 README
 TODO
+charmap.pl
 figlet.6
 figlet.pl
 minifig.pl
 minifig.HOWTO
+showfigfonts.pl
 standard.flf
 test.pl
 test.txt

@@ -1,4 +1,28 @@
 Revision history for Perl extension Text::FIGlet, figlet.pl, minifig.pl
+1.06
+	- Renamed Changes CHANGES
+	- Touched up man pages, added (undocumented) support for
+	   -h and --help to the scripts
+	- Major cleanup, fixed many translucent bugs,
+	  it's amazing if it was even "working" ;-)
+	- Fixed a bug that failed on relative paths to fonts with -f
+	- Added showfigfonts.pl utility,
+	  it's exposes the slowness of loading fonts
+	  (working on it, thangs wog and jryan)
+	- Fixed extended character support,
+	  subsequently reducing memory requirements (in a fashion)
+	- Deprecated -demo, use the charmap.pl utility instead
+	- Added $REVISION to figlet.pl and minifig.pl
+	- Modified switch parsing in figlet.pl and minifig.pl,
+	  perl -s is no longer used. Support for standard figlet switch
+	  syntax was added so now you can say -m0 or -m=0 or -m 0.
+	  Of course this means you can say things like -m-0 and -m -0
+	  which may look a little odd.
+	- Made figlet.pl and minifig.pl use strict
+	- Fixed -w=1, I believe this was broken in 1.04 when I kludged
+	  wrapping. I also did some work on wrapping in general and
+	  there should be no more issues.
+
 1.05  
 	- Added -m modes 0 (kerning) and -2 (font defined)
 	- Added -c, -l, -r, -x; justification
