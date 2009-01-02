@@ -1,9 +1,9 @@
-#!/usr/bin/perl
+#!/mit/belg4mit/arch/sun4x_59/bin/Lperl -w
 use strict;
-use vars qw($VERSION $REVISION);
-use Text::FIGlet;
+use vars '$VERSION';
+use Text::FIGlet 1.07;
 use File::Find;
-$REVISION = '1.06'; #This is build of the package/this component
+$VERSION = 2.1.2;
 
 my %opts;
 $opts{$_} = undef for
@@ -11,6 +11,7 @@ $opts{$_} = undef for
 $opts{$_} = "0 but true" for
   qw(d w);
 for (my $i=0; $i <= scalar @ARGV; $i++) {
+  last unless exists($ARGV[$i]);
   shift && last if $ARGV[$i] eq '--';
   foreach my $key ( sort { length($b)-length($a) } keys %opts) {
     if ( $ARGV[$i] =~ /^-$key=?(.*)/ ) {      
@@ -21,7 +22,7 @@ for (my $i=0; $i <= scalar @ARGV; $i++) {
     }
   }
 }
-$_ eq '0 but true' && ($_ = undef) for values %opts;
+defined($_) && $_ eq '0 but true' && ($_ = undef) for values %opts;
 if( $opts{help}||$opts{h}||$opts{-help} ){
   eval "use Pod::Text;";
   die("Unable to print man page: $@\n") if $@;
@@ -45,7 +46,7 @@ find(sub {
 $|++;
 foreach ( sort @fonts ){
   my $font = Text::FIGlet->new(
-			       -D=>$opts{D}&!$opts{E},
+			       -D=>$opts{D}&&!$opts{E},
 			       -d=>$opts{d},
 			       -f=>$_);
   s/\.flf$//;

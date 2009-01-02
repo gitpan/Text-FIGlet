@@ -1,5 +1,31 @@
-Revision history for Perl extension Text::FIGlet, figlet.pl, minifig.pl
-1.06
+Revision history for Perl extension Text::FIGlet and "working demos" in bin/
+(figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
+
+2.00
+	- figify is now context sensitive, and can return a string or array
+	- Fixed no wrap (-w=>-1)
+	- Fixed typo in SYNOPSIS
+	- Fixed parser problem preventing unfortunately formatted fonts
+	  such as poison from being used
+
+1.07	UNRELEASED
+	- Added support for control files, significant documentation rewrite
+	  mayhem ensued
+	- Added Unicode support
+	- Added missing release dates for 1.05 and 1.06
+	  (Not that they're accurate as my clock was majorly skewed,
+	   which wasn't very nice to distribute)
+	- Added an explicit licencse
+	- Removed REVISION in favor of "use Module VERSION"
+	- Removed a dependency on $/ for parsing, which was incorrect anyways
+	- Fixed up to run clean under -w
+	- Fixed a few minor bugs
+	- Fixed various bits to be (more) compliant with the specifications
+	  for FIGdrivers L<figfont.txt>
+	- Fixed up package layout and Makefile.PL for script installation
+	- Fixed figlet.pl -I1 issues
+
+1.06	Fri Feb 15 09:13:59 UTC 2002
 	- Renamed Changes CHANGES
 	- Touched up man pages, added (undocumented) support for
 	   -h and --help to the scripts
@@ -23,7 +49,7 @@ Revision history for Perl extension Text::FIGlet, figlet.pl, minifig.pl
 	  wrapping. I also did some work on wrapping in general and
 	  there should be no more issues.
 
-1.05  
+1.05  	Fri Dec  1 19:04:12 UTC 2001
 	- Added -m modes 0 (kerning) and -2 (font defined)
 	- Added -c, -l, -r, -x; justification
 	- Added -L, -R, -X; orientation
@@ -81,10 +107,5 @@ Revision history for Perl extension Text::FIGlet, figlet.pl, minifig.pl
 	- Created -demo (figlet.pl/minifig.pl)
 	- Cleaned and clarified pod
 
-1.02/
-0.02  Sat Nov 11 15:54:02 EST 2000
+1.02  Sat Nov 11 15:54:02 EST 2000
 	- initial release
-
-0.01  Fri Nov 10 22:43:10 2000
-	- original version; created by h2xs 1.18
-

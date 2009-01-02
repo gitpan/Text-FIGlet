@@ -1,6 +1,5 @@
-This package includes the module Text::FIGlet as well as
-several scripts which use it, as well as the default
-FIGlet font standard.flf.
+This package includes the module Text::FIGlet, several scripts which use it,
+the FIGlet fonts standard.flf and mini.flf and documentation on creating fonts.
 
 NAME
     Text::FIGlet - a perl module to provide FIGlet abilities, akin to banner
@@ -24,8 +23,10 @@ DESCRIPTION
      If you want something more substantive imagine:
          * Run Apache with mod_perl
          * In F<startup.pl> create a Text::FIGlet object
-         * figify text for the heads of Directory listings,
-           and you look like an FTP site ;-)
+           * figify text for the heads of Directory listings,
+             and you look like a warm and fuzzy BBS
+           * create ornate text based counters or timestamps
+             on pages
 
      Or not, I just make the scissors, now run along.
 
@@ -46,13 +47,12 @@ EXAMPLES
 |  _  ||  __/| || || (_) |   \ V  V /  | (_) || |   | || (_| |
 |_| |_| \___||_||_| \___/     \_/\_/    \___/ |_|   |_| \__,_|
 
-figlet.pl is still in it's childhood and does not yet do smushing,
-among other things.
+figlet.pl is a young adult and does not yet do smushing, among other things.
 
 minifig.pl is a self-contained version of figlet.pl
 It requires nothing more than a standard Perl distribution.
 For more information about minifig.pl see minifig.pl -help,
-and minifig.HOWTO on customizing it.
+and doc/minifig.HOWTO on customizing it.
 
 % minifig.pl -A Hello World
 
@@ -65,4 +65,4 @@ INSTALLATION
 perl Makefile.PL
 make test
 make install
-./figlet.pl -f standard -d .
+bin/figlet.pl -d share
