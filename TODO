@@ -1,3 +1,10 @@
+!!!!!   Negative char performance
+        Note about load time/memory hit?
+
+        switch to its own font, to avoid slowing down the tests.
+
+        Fix:? Hash(collision performance hit)? 2nd array(code complexity?)?
+
 VRFY
 	5.005, 5.6.0., 5.6.1, 5.8(ok)
 		w/ & w/o unicode
@@ -8,9 +15,6 @@ VRFY
 	Test::Differences dependency?
 
 	patch-1.07-2.00
-	PRIVs?
-
-	negative character codes, test -C mapping them in
 
 CAVEAT
 XXX	may break, depending on Text::Wrap?
@@ -19,12 +23,12 @@ XXX	may break, depending on Text::Wrap?
 	a) keep current hack on hack
 
 	b) use header width
--m -1
-	my kern is by rectangles, not edges :-/ so W<=> in World is munged
 
 General
 	- zipped font support?
 	- smushing (-m=1|2|4|8|16|32)
+	  TOIlet -o/verlap mode? (partial lamination of each FIGchar)
+          Would have to know what chars are "inside" the top letter for opacity
 	- controls; h j b g
 		- isn't u enough?
 	- "Vertical Fitting"?
@@ -50,9 +54,6 @@ Control
 		just pre 5.6 (could translate to s///)
 
 Refactor
-	VRFY, is hichar/lochar needed?
-		need something similar for negative->10 transition?
-
 	Benchmark
 		$font alias again
 
@@ -73,8 +74,4 @@ Refactor
 		ammend split expression?
 
 charmapl.pl
-	missing unicodes? negatives!
-
 	Text::Wrap in 5.6 is broken :-P so >0xff are wrapped
-
-	need lochar/hichar?

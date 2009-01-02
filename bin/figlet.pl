@@ -1,8 +1,8 @@
-#!/mit/belg4mit/arch/sun4x_59/bin/Lperl -w
+#!/usr/bin/perl -w
 package main;
 use strict;
 use vars '$VERSION';
-use Text::FIGlet 1.07;
+use Text::FIGlet 2.01;
 $VERSION = 2.1.2;
 
 my %opts;

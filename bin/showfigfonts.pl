@@ -1,9 +1,9 @@
-#!/mit/belg4mit/arch/sun4x_59/bin/Lperl -w
+#!/usr/bin/perl -w
 use strict;
 use vars '$VERSION';
-use Text::FIGlet 1.07;
+use Text::FIGlet 2.01;
 use File::Find;
-$VERSION = 2.1.2;
+$VERSION = 2.1.2_2;
 
 my %opts;
 $opts{$_} = undef for
@@ -50,7 +50,7 @@ foreach ( sort @fonts ){
 			       -d=>$opts{d},
 			       -f=>$_);
   s/\.flf$//;
-  print "$_ :\n", $font->figify(-A=>$_, -w=>$opts{w}), "\n";
+  print "$_ :\n", scalar $font->figify(-A=>$_, -w=>$opts{w}), "\n";
 }
 __END__
 =pod

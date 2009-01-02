@@ -1,12 +1,12 @@
-#!/mit/belg4mit/arch/sun4x_59/bin/Lperl -w
+#!/usr/bin/perl -w
 package Text::FIGlet;
 require 5;
-use constant PRIVb => 0xF0000;
-use constant PRIVe => 0xFFFFD;
+use constant PRIVb => 0xF0000; #Map negative characters into Unicode's
+use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.00;
+$VERSION = 2.01;
 
 
 $] >= 5.008 ? eval "use Encode;" : eval "sub Encode::_utf8_off {};";
@@ -99,6 +99,7 @@ sub new{
     while(<FLC>){
       next if /^flc2a|\s*#|^\s*$/;
 
+      #XXX Is this adequate?
       $code .= 'use utf8;' if /^\s*u/;
 
       if( /^\s*$Text::FIGlet::RE{no}\s+$Text::FIGlet::RE{no}\s*/ ){
@@ -142,7 +143,7 @@ use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
 use Text::Wrap;
-$VERSION = 2.00;
+$VERSION = 2.01;
 
 sub new{
   shift();
@@ -157,7 +158,6 @@ sub _load_font{
   my $self = shift();
   my $font = $self->{_font} = [];
   my(@header, $header, $path);
-  my($lochar, $hichar) = (0, 0xFFFFFFFF);
   local($_, *FLF);
 
   if ( $self->{-f} ) {
@@ -220,11 +220,9 @@ sub _load_font{
 
     my $val = Text::FIGlet::_no($1, $2, $3, 1);
 
-    ($lochar = $lochar < $val ? $val : $lochar) unless $1;
-    ($hichar = $hichar < $val ? $hichar : $val ) if $1;
-
     #Clobber German chars
     $font->[$val] = '';
+
     &_load_char($self, $val) || last;
   }
   close(FLF);
@@ -232,7 +230,6 @@ sub _load_font{
   if( $self->{-m} eq '-0' ){
     my $pad;
     for(my $ord=0; $ord < scalar @{$font}; $ord++){
-      $ord = $hichar-1 if $ord == $lochar;
 #     foreach my $i (3..$header[1]+2){
       foreach my $i (-$header[1]..-1){
 	#XXX Could we optimize this to next on the outer loop?
@@ -251,7 +248,6 @@ sub _load_font{
 
   if( $self->{-m} == -1 ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
-      $ord = $hichar-1 if $ord == $lochar;
       foreach my $i (-$header[1]..-1){
 	#XXX Could we optimize this to next on the outer loop?
 	next unless $font->[$ord]->[$i];
@@ -263,9 +259,9 @@ sub _load_font{
       }
     }
   }
+
   if( $self->{-m} > -1 && $self->{-m} ne '-0' ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
-      $ord = $hichar-1 if $ord == $lochar;
       foreach my $i (-$header[1]..-1){
 	#XXX Could we optimize this to next on the outer loop?
 	next unless $font->[$ord]->[$i];
@@ -403,7 +399,7 @@ sub figify{
     return wantarray ? @buffer : join($/, @buffer).$/;
 }
 1;
-#!/mit/belg4mit/arch/sun4x_59/bin/Lperl -w
+#!/usr/bin/perl -w
 package main;
 use strict;
 use vars '$VERSION';

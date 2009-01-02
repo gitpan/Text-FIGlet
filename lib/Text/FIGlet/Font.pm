@@ -6,7 +6,7 @@ use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
 use Text::Wrap;
-$VERSION = 2.00;
+$VERSION = 2.01;
 
 sub new{
   shift();
@@ -21,7 +21,6 @@ sub _load_font{
   my $self = shift();
   my $font = $self->{_font} = [];
   my(@header, $header, $path);
-  my($lochar, $hichar) = (0, 0xFFFFFFFF);
   local($_, *FLF);
 
 #MAGIC minifig0
@@ -78,11 +77,9 @@ sub _load_font{
 
     my $val = Text::FIGlet::_no($1, $2, $3, 1);
 
-    ($lochar = $lochar < $val ? $val : $lochar) unless $1;
-    ($hichar = $hichar < $val ? $hichar : $val ) if $1;
-
     #Clobber German chars
     $font->[$val] = '';
+
     &_load_char($self, $val) || last;
   }
   close(FLF);
@@ -90,7 +87,6 @@ sub _load_font{
   if( $self->{-m} eq '-0' ){
     my $pad;
     for(my $ord=0; $ord < scalar @{$font}; $ord++){
-      $ord = $hichar-1 if $ord == $lochar;
 #     foreach my $i (3..$header[1]+2){
       foreach my $i (-$header[1]..-1){
 	#XXX Could we optimize this to next on the outer loop?
@@ -109,7 +105,6 @@ sub _load_font{
 
   if( $self->{-m} == -1 ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
-      $ord = $hichar-1 if $ord == $lochar;
       foreach my $i (-$header[1]..-1){
 	#XXX Could we optimize this to next on the outer loop?
 	next unless $font->[$ord]->[$i];
@@ -121,9 +116,9 @@ sub _load_font{
       }
     }
   }
+
   if( $self->{-m} > -1 && $self->{-m} ne '-0' ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
-      $ord = $hichar-1 if $ord == $lochar;
       foreach my $i (-$header[1]..-1){
 	#XXX Could we optimize this to next on the outer loop?
 	next unless $font->[$ord]->[$i];
@@ -308,6 +303,9 @@ will not appear in the next version of B<Text::FIGlet::Font>.
 =item B<-U>
 
 Process input as Unicode (UTF-8).
+
+B<Note that this is necessary if you are mapping in negative characters,
+with a control file>.
 
 =item B<-f=E<gt>>F<fontfile>
 

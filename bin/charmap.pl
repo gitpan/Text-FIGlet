@@ -1,10 +1,10 @@
-#!/mit/belg4mit/arch/sun4x_59/bin/Lperl -w
+#!/usr/bin/perl -w
 use constant PRIVb => 0xF0000;
 use constant PRIVe => 0xFFFFD;
 use strict;
 use vars '$VERSION';
-use Text::FIGlet 1.07;
-$VERSION = 2.1.2;
+use Text::FIGlet 2.01;
+$VERSION = 2.1.2_2;
 
 my %opts;
 $opts{$_} = undef for
@@ -51,12 +51,14 @@ my $n = int(($opts{w}||80) / $font->{_maxLen});
 {
   print "ASCII: [-\b-E\bE]\n\n";
   for(my$i=33; $i <= 126; $i++){
-    printf "%s =%04i %s", chr($i), $i, ' 'x($font->{_maxLen}-8);
-    print "\n", $font->figify(-A=>join('', map(chr($_), $i-$n+1..$i)),%figify),
+    printf "%s =% 4i %s", chr($i), $i, ' 'x($font->{_maxLen}-8);
+    print "\n", scalar $font->figify(-A=>join('', map(chr($_),
+						$i-$n+1..$i)),%figify),
       "\n" if ($i-32)%$n == 0;
   }
   if( my $r = 94 % $n ){
-    print "\n", $font->figify(-A=>join('', map(chr($_), 126-$r..126)),%figify),
+    print "\n", scalar $font->figify(-A=>join('', map(chr($_),
+						126-$r..126)),%figify),
       "\n";
   }
 }
@@ -79,13 +81,15 @@ my @buffer;
   for(my$i=1; $i < scalar @buffer; $i++){
     printf "%s =%04i %s", chr($buffer[$i]), $buffer[$i], ' 'x($font->{_maxLen}-8);
     if( $i%$n == 0 ){
-      print "\n", $font->figify(-A=>join('', map(chr($_), @buffer[$i-$n+1..$i])),%figify), "\n";
+      print "\n",scalar $font->figify(-A=>join('', map(chr($_),
+						 @buffer[$i-$n+1..$i])),%figify), "\n";
       splice(@buffer,1,$n);
       $i-=$n;
     }
   }
   if( scalar @buffer -1 ){
-    print "\n", $font->figify(-A=>join('', map(chr($_), splice(@buffer,1))),%figify),
+    print "\n", scalar $font->figify(-A=>join('', map(chr($_),
+						splice(@buffer,1))),%figify),
       "\n" ;
   }
 }
@@ -105,7 +109,7 @@ exit unless scalar @{$font->{_font}} > 128;
 	printf("0x%05X %s", $i, ' 'x($font->{_maxLen}-8));
 
     if( scalar @buffer == $n ){
-      print "\n", $font->figify(-U=> $U = $i > 255 ? 1 : 0,
+      print "\n", scalar $font->figify(-U=> $U = $i > 255 ? 1 : 0,
 				-A=>join('', '', map(chr($_), @buffer)),%figify),
 	"\n" ;
       @buffer = ();
@@ -116,14 +120,14 @@ exit unless scalar @{$font->{_font}} > 128;
     push @buffer, $i;
     printf("0x%05X %s", $i, ' 'x($font->{_maxLen}-8));
     if( scalar @buffer == $n ){
-      print "\n", $font->figify(-U=>1,
+      print "\n", scalar $font->figify(-U=>1,
 				-A=>join('', '', map(chr($_), @buffer)),%figify),
 	"\n" ;
       @buffer = ();
     }
   }
   if( scalar @buffer ){
-    print "\n", $font->figify(-U=> $U,
+    print "\n", scalar $font->figify(-U=> $U,
 			      -A=>join('', map(chr($_), @buffer)),%figify),
       "\n" ;
   }
@@ -138,20 +142,17 @@ exit unless scalar @{$font->{_font}} > 128;
     next unless exists($font->{_font}->[$i]) && scalar @{$font->{_font}->[$i]};
     push @buffer, $i;
     printf "-0x%04X %s", (-$i+PRIVe+2), ' 'x($font->{_maxLen}-8);
+#   print join(':', map { sprintf "0x%06X", $_} @buffer), "\n";#XXX
+#   print join(':', map(chr($_), @buffer)), "\n";#XXX
     if( scalar @buffer == $n ){
-      print join(':', map(chr($_), @buffer)), "\n";#XXX
-      print "\n", $font->figify(-U=>1,
+      print "\n", scalar $font->figify(-U=>1,
 				-A=>join('', '', map(chr($_), @buffer)),%figify),
 	"\n" ;
       @buffer = ();
     }
   }
   if( scalar @buffer ){
-    print "\n\n";
-    print join(':', map { sprintf "0x%06X", $_} @buffer), "\n";#XXX
-    print join(':', @buffer), "\n";#XXX
-    print join(':', map(chr($_), @buffer)), "\n";#XXX
-    print "\n", $font->figify(-U=>1,
+    print "\n", scalar $font->figify(-U=>1,
 			      -A=>join('', map(chr($_), @buffer)),%figify),
       "\n" ;
   }

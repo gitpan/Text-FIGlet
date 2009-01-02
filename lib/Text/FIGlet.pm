@@ -1,11 +1,11 @@
 package Text::FIGlet;
 require 5;
-use constant PRIVb => 0xF0000;
-use constant PRIVe => 0xFFFFD;
+use constant PRIVb => 0xF0000; #Map negative characters into Unicode's
+use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.00;
+$VERSION = 2.01;
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;

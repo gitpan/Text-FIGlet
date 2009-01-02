@@ -5,7 +5,7 @@ use vars '$VERSION';
 use Carp 'croak';
 use File::Basename 'fileparse';
 use File::Spec;
-$VERSION = 1.07;
+$VERSION = 2.01;
 
 sub new{
   my $proto = shift;
@@ -32,6 +32,7 @@ sub new{
     while(<FLC>){
       next if /^flc2a|\s*#|^\s*$/;
 
+      #XXX Is this adequate?
       $code .= 'use utf8;' if /^\s*u/;
 
       if( /^\s*$Text::FIGlet::RE{no}\s+$Text::FIGlet::RE{no}\s*/ ){
@@ -90,8 +91,8 @@ similar to the Unix tr command. Control files can be
 identified by the suffix I<.flc>. Most Text::FIGlet::Control
 control files will be stored in FIGlet's default font directory.
 
-The following control file commands are supported, for more detail see
-F<figfont.txt>.
+The following control file commands are supported, for more
+detail see F<figfont.txt> included with this distribution.
 
 =over
 
@@ -104,6 +105,9 @@ executes all previously accumulated translations before continuing.
 
 Both the explicit forms "t in out" and "t in-range out-range"
 as well as the implicit form "number number".
+
+B<Note that if you are mapping in negative characters,
+you will need to C<figify> in Unicode mode I<-U>>.
 
 =item u Unicode
 

@@ -1,7 +1,16 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
-2.00
+2.01	Fri Jan  2 13:54:35 EST 2009
+	- Fixed reversed test which caused "Out of memory during extend array"
+	  in perl 5.8.5+
+	- Amended documentation to include notes about negative characters.
+	- Added missing release date for 2.00
+	- Fixed bin/ tools to contend with context awareness of figify
+	- Remove leading zero padding on ASCII/ANSI characters codes in
+	  charmap.pl since codes aren't octal. Also nixed excess \s+ for -chars
+
+2.00	Thu Jan  1 22:48 EST 2009
 	- figify is now context sensitive, and can return a string or array
 	- Fixed no wrap (-w=>-1)
 	- Fixed typo in SYNOPSIS
