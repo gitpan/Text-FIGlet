@@ -6,7 +6,7 @@ use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
 use Text::Wrap;
-$VERSION = 2.01;
+$VERSION = 2.02;
 
 sub new{
   shift();
@@ -54,15 +54,13 @@ sub _load_font{
 
   #German characters?
   unless( eof(FLF) ){
-    my %D =(196=>91, 214=>92, 220=>93, 228=>123, 246=>124, 252=>125, 223=>126);
+    my %D =(91=>196, 92=>214, 93=>220, 123=>228, 124=>246, 125=>252, 126=>223);
 
-    foreach my $k ( keys %D ){
-      &_load_char($self, $k) || last;
+    foreach my $k ( sort {$a <=> $b} keys %D ){
+      &_load_char($self, $D{$k}) || last;
     }
     if( $self->{-D} ){
-      foreach my $k ( keys %D ){
-	$font->[$D{$k}] = $font->[$k];
-      }
+      $font->[$_] = $font->[$D{$_}] for keys %D;
     }
   }
 
@@ -296,16 +294,18 @@ C<new>
 B<-D> switches to the German (ISO 646-DE) character set.
 Turns I<[>, I<\> and I<]> into umlauted A, O and U, respectively.
 I<{>, I<|> and I<}> turn into the respective lower case versions of these.
-I<~> turns into s-z. B<-E> turns off B<-D> processing.
-These options are deprecated, which means they probably
-will not appear in the next version of B<Text::FIGlet::Font>.
+I<~> turns into s-z.
 
-=item B<-U>
+This option is deprecated, which means it may soon be removed from
+B<Text::FIGlet::Font>. The modern way to achieve this effect is with
+L<Text::FIGlet::Control>.
+
+=item B<-U=E<gt>>I<boolean>
 
 Process input as Unicode (UTF-8).
 
 B<Note that this is necessary if you are mapping in negative characters,
-with a control file>.
+with a control file>, regardless of your verison of perl.
 
 =item B<-f=E<gt>>F<fontfile>
 
@@ -430,6 +430,19 @@ L<Text::FIGlet>, L<figlet(6)>
 =over
 
 =item $/ is used to create the output string in scalar context
+
+=item Pre-5.8 Unicode
+
+Perl 5.6 Unicode support was notriously sketchy. Best efforts have
+been made to work around this, and things should work fine. If you
+have problems, favor C<"\x{...}"> over C<chr>.
+
+=item Pre-5.6
+
+This codebase was originally developed to be compatible with 5.005.03,
+but it has not been tested aganist it for sometime. Indeed, many of its
+dependencies (core packages) don't seem to even acknowledge the existence
+of such dated incarnations. Any reports on 
 
 =item B<-m=>E<gt>'-0'
 

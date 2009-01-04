@@ -1,9 +1,15 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
+2.02	Sun Jan  4 17:19 EST 2009
+	- Rework tests
+	- Fixed -D, which broke when perl started randomizing hash key
+	  retrieval order for security
+	- Fix-up and clarify Unicode support for 5.6
+
 2.01	Fri Jan  2 13:54:35 EST 2009
 	- Fixed reversed test which caused "Out of memory during extend array"
-	  in perl 5.8.5+
+	  in perl 5.8.5+, then completely removed the test as unnecessary :-P
 	- Amended documentation to include notes about negative characters.
 	- Added missing release date for 2.00
 	- Fixed bin/ tools to contend with context awareness of figify

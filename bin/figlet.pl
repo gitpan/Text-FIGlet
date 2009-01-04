@@ -1,9 +1,9 @@
-#!/usr/bin/perl -w
+#!/mit/belg4mit/arch/sun4x_59/bin/perl -w
 package main;
 use strict;
 use vars '$VERSION';
 use Text::FIGlet 2.01;
-$VERSION = 2.1.2;
+$VERSION = 2.1.2; #2.02
 
 my %opts;
 $opts{-C} = [];
@@ -171,12 +171,17 @@ FIGlet, for details on how to write a F<controlfile>.
 =item B<-D>
 B<-E>
 
-B<-D> switches to the German (ISO 646-DE) character set.
-Turns I<[>, I<\> and I<]> into umlauted A, O and U, respectively.
-I<{>, I<|> and I<}> turn into the respective lower case versions of these.
-I<~> turns into s-z. B<-E> turns off B<-D> processing.
-These options are deprecated, which means they probably
-will not appear in the next version of FIGlet.
+B<-E> is the default, and a no-op.
+
+B<-D>  switches  to  the German (ISO 646-DE) character
+set.  Turns `[', `\' and `]' into umlauted A, O and
+U,  respectively.   `{',  `|' and `}' turn into the
+respective lower case versions of these.  `~' turns
+into  s-z.
+
+These options are deprecated, which means they may soon
+be removed. The modern way to achieve this effect is with
+control files, see B<-C>.
 
 =item B<-I>I<infocode>
 

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/mit/belg4mit/arch/sun4x_59/bin/perl -w
 use constant PRIVb => 0xF0000;
 use constant PRIVe => 0xFFFFD;
 use strict;
@@ -135,9 +135,9 @@ exit unless scalar @{$font->{_font}} > 128;
 
 #Negative chars...
 {
-  print "Negative (unmapped) Characters\n\n";
   @buffer = ();
   exit if scalar @{$font->{_font}} < PRIVb;
+  print "Negative (unmapped) Characters\n\n";
   for(my$i=PRIVe; $i >= PRIVb; $i--){
     next unless exists($font->{_font}->[$i]) && scalar @{$font->{_font}->[$i]};
     push @buffer, $i;

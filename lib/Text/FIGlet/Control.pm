@@ -107,11 +107,13 @@ Both the explicit forms "t in out" and "t in-range out-range"
 as well as the implicit form "number number".
 
 B<Note that if you are mapping in negative characters,
-you will need to C<figify> in Unicode mode I<-U>>.
+you will need to C<figify> in Unicode mode I<-U>>. See also B<u> below.
 
 =item u Unicode
 
 Process text as Unicode (UTF-8).
+
+Note that this is required for perl 5.6 if you are doing negative mapping.
 
 =back
 
@@ -147,7 +149,7 @@ returned will be an aggregate of the specified controls.
   my $out2 = $flc1->($flc2->());
   #NOTE: Controls are not commutative.
   #Order of chained controls is only
-  #insiginificant for some controls.
+  #insignificant for some controls.
 
 =back
 

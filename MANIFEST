@@ -1,5 +1,4 @@
 CHANGES
-LICENSE.pod
 MANIFEST
 Makefile.PL
 README
@@ -14,12 +13,14 @@ doc/minifig.txt
 lib/Text/FIGlet.pm
 lib/Text/FIGlet/Control.pm
 lib/Text/FIGlet/Font.pm
+lib/Text/FIGlet/LICENSE.pod
 share/standard.flf
 share/upper.flc
 share/mini.flf
-t/1.t
-t/2.t
-t/3.t
+t/1-basic.t
+t/2-extended.t
+t/2.flc
+t/2.flf
 minifig.PL
 shebang.PL
 META.yml                                 Module meta-data (added by MakeMaker)

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/mit/belg4mit/arch/sun4x_59/bin/perl -w
 package Text::FIGlet;
 require 5;
 use constant PRIVb => 0xF0000; #Map negative characters into Unicode's
@@ -6,7 +6,7 @@ use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.01;
+$VERSION = 2.02; #2.02
 
 
 $] >= 5.008 ? eval "use Encode;" : eval "sub Encode::_utf8_off {};";
@@ -72,7 +72,7 @@ use vars '$VERSION';
 use Carp 'croak';
 use File::Basename 'fileparse';
 use File::Spec;
-$VERSION = 1.07;
+$VERSION = 2.01;
 
 sub new{
   my $proto = shift;
@@ -143,7 +143,7 @@ use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
 use Text::Wrap;
-$VERSION = 2.01;
+$VERSION = 2.02;
 
 sub new{
   shift();
@@ -197,15 +197,13 @@ sub _load_font{
 
   #German characters?
   unless( eof(FLF) ){
-    my %D =(196=>91, 214=>92, 220=>93, 228=>123, 246=>124, 252=>125, 223=>126);
+    my %D =(91=>196, 92=>214, 93=>220, 123=>228, 124=>246, 125=>252, 126=>223);
 
-    foreach my $k ( keys %D ){
-      &_load_char($self, $k) || last;
+    foreach my $k ( sort {$a <=> $b} keys %D ){
+      &_load_char($self, $D{$k}) || last;
     }
     if( $self->{-D} ){
-      foreach my $k ( keys %D ){
-	$font->[$D{$k}] = $font->[$k];
-      }
+      $font->[$_] = $font->[$D{$_}] for keys %D;
     }
   }
 
@@ -399,7 +397,7 @@ sub figify{
     return wantarray ? @buffer : join($/, @buffer).$/;
 }
 1;
-#!/usr/bin/perl -w
+#!/mit/belg4mit/arch/sun4x_59/bin/perl -w
 package main;
 use strict;
 use vars '$VERSION';
@@ -571,12 +569,17 @@ FIGlet, for details on how to write a F<controlfile>.
 =item B<-D>
 B<-E>
 
-B<-D> switches to the German (ISO 646-DE) character set.
-Turns I<[>, I<\> and I<]> into umlauted A, O and U, respectively.
-I<{>, I<|> and I<}> turn into the respective lower case versions of these.
-I<~> turns into s-z. B<-E> turns off B<-D> processing.
-These options are deprecated, which means they probably
-will not appear in the next version of FIGlet.
+B<-E> is the default, and a no-op.
+
+B<-D>  switches  to  the German (ISO 646-DE) character
+set.  Turns `[', `\' and `]' into umlauted A, O and
+U,  respectively.   `{',  `|' and `}' turn into the
+respective lower case versions of these.  `~' turns
+into  s-z.
+
+These options are deprecated, which means they may soon
+be removed. The modern way to achieve this effect is with
+control files, see B<-C>.
 
 =item B<-I>I<infocode>
 

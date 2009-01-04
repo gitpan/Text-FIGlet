@@ -1,28 +1,48 @@
-!!!!!   Negative char performance
-        Note about load time/memory hit?
-
-        switch to its own font, to avoid slowing down the tests.
-
-        Fix:? Hash(collision performance hit)? 2nd array(code complexity?)?
-
 VRFY
-	5.005, 5.6.0., 5.6.1, 5.8(ok)
+	5.005, 5.6.0(ok), 5.6.1, 5.8(ok)
 		w/ & w/o unicode
-		chr(0x13d) on pre 5.6?! (skip test, or fake up...)
-
-	grep for XXX
 
 	Test::Differences dependency?
 
-	patch-1.07-2.00
+	grep for XXX, "patches"
+
+        switch -char test to its own font, to avoid slowing down the tests.
+
+	bin tools versions
 
 CAVEAT
-XXX	may break, depending on Text::Wrap?
-
--m -0
+	-m=-0
 	a) keep current hack on hack
-
 	b) use header width
+
+	Negative char performance. Note about load time/memory hit?
+
+	may break, depending on Text::Wrap?
+
+charmapl.pl
+	Text::Wrap in 5.6 is broken :-P so >0xff are wrapped
+
+Refactor
+	Benchmark
+		$font alias again
+
+		1.07 vs. 1.06
+
+		dprof
+
+        Negative Char performance
+		 Hash(collision performance hit)?
+
+		 2nd array(code complexity?)?
+
+		 Pre-allocating length halves size of array,
+		 req. scan file for - 1st, seek/read backwards? iff -U
+		     (assumes sane file order, but is okay for optimization?)
+
+	char =[] can get blank chars to not be ref's?!
+
+	reduce reliance upon $/
+		ammend split expression?
 
 General
 	- zipped font support?
@@ -52,26 +72,3 @@ Control
 		at all (#$#@, could translate to \x{} notation)
 
 		just pre 5.6 (could translate to s///)
-
-Refactor
-	Benchmark
-		$font alias again
-
-		1.07 vs. 1.06
-
-		dprof
-
-	try _font = {}
-		no hack for negative indices
-
-		no lochar/hichar hack
-
-		use hex as key, for wider space?
-
-	char =[] can get blank chars to not be ref's?!
-
-	reduce reliance upon $/
-		ammend split expression?
-
-charmapl.pl
-	Text::Wrap in 5.6 is broken :-P so >0xff are wrapped

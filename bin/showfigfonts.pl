@@ -1,9 +1,9 @@
-#!/usr/bin/perl -w
+#!/mit/belg4mit/arch/sun4x_59/bin/perl -w
 use strict;
 use vars '$VERSION';
 use Text::FIGlet 2.01;
 use File::Find;
-$VERSION = 2.1.2_2;
+$VERSION = 2.1.2; #2.02
 
 my %opts;
 $opts{$_} = undef for
@@ -63,7 +63,6 @@ showfigfonts.pl - prints samples of the available FIGlet fonts
 
 B<showfigfonts.pl>
 [ B<-D> ]
-[ B<-E> ]
 [ B<-d=>F<fontdirectory> ]
 [ B<-help> ]
 [ B<-w=>I<outputwidth> ]
@@ -80,13 +79,16 @@ This will recusrively fetch fonts displaying a sample
 =item B<-D>
 B<-E>
 
+B<-E> is the default, and a no-op.
+
 B<-D>  switches  to  the German (ISO 646-DE) character
 set.  Turns `[', `\' and `]' into umlauted A, O and
 U,  respectively.   `{',  `|' and `}' turn into the
 respective lower case versions of these.  `~' turns
-into  s-z.   B<-E>  turns  off  B<-D>  processing.  These
-options are deprecated, which means  they  probably
-will not appear in the next version of FIGlet.
+into  s-z.
+
+These options are deprecated, which means they may soon
+be removed.
 
 =item B<-d>=F<fontdirectory>
 

@@ -5,7 +5,7 @@ use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.01;
+$VERSION = 2.02; #1.07
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;
@@ -199,22 +199,5 @@ Jerrad Pierce
                //                                  >>>>    /
                                                     >>>>>>/
                                                      >>>>>
-
-=head1 LICENSE
-
-=over
-
-=item * Thou shalt not claim ownership of unmodified materials.
-
-=item * Thou shalt not claim whole ownership of modified materials.
-
-=item * Thou shalt grant the indemnity of the provider of materials.
-
-=item * Thou shalt use and dispense freely without other restrictions.
-
-=back
-
-Or if you truly insist, you may use and distribute this under ther terms
-of Perl itself (GPL and/or Artistic License).
 
 =cut
