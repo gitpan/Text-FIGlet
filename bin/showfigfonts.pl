@@ -1,4 +1,4 @@
-#!/mit/belg4mit/arch/sun4x_59/bin/perl -w
+#!/usr/bin/perl -w
 use strict;
 use vars '$VERSION';
 use Text::FIGlet 2.01;

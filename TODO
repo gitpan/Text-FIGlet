@@ -1,21 +1,16 @@
 VRFY
-	5.005, 5.6.0(ok), 5.6.1, 5.8(ok)
-		w/ & w/o unicode
-
 	Test::Differences dependency?
 
 	grep for XXX, "patches"
 
-        switch -char test to its own font, to avoid slowing down the tests.
-
 	bin tools versions
 
 CAVEAT
+	Negative char performance. Note about load time/memory hit?
+
 	-m=-0
 	a) keep current hack on hack
 	b) use header width
-
-	Negative char performance. Note about load time/memory hit?
 
 	may break, depending on Text::Wrap?
 
@@ -43,6 +38,8 @@ Refactor
 
 	reduce reliance upon $/
 		ammend split expression?
+
+        Native UTF8 in 5.8+?
 
 General
 	- zipped font support?

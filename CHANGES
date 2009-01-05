@@ -1,6 +1,10 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
+2.03	Sun Jan  4 21:14 EST 2009
+	- Fix example uses in documentation to include scalar cast
+	- Further updats to Unicode documentation, and verify 5.005 works.
+
 2.02	Sun Jan  4 17:19 EST 2009
 	- Rework tests
 	- Fixed -D, which broke when perl started randomizing hash key

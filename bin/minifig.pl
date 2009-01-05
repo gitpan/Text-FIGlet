@@ -1,4 +1,4 @@
-#!/mit/belg4mit/arch/sun4x_59/bin/perl -w
+#!/usr/bin/perl -w
 package Text::FIGlet;
 require 5;
 use constant PRIVb => 0xF0000; #Map negative characters into Unicode's
@@ -6,7 +6,7 @@ use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.02; #2.02
+$VERSION = 2.03; #1.07
 
 
 $] >= 5.008 ? eval "use Encode;" : eval "sub Encode::_utf8_off {};";
@@ -15,6 +15,15 @@ $] >= 5.008 ? eval "use Encode;" : eval "sub Encode::_utf8_off {};";
        bytechar=> qr/(.)/,
        no      => qr/(-?)((0?)(?:x[\da-fA-F]+|\d+))/,
        );
+
+sub import{
+  @_ = qw/UTF8chr UTF8ord/ if grep(/:Encode/, @_);
+
+  if( @_ ) {
+    no strict 'refs';
+    *{scalar(caller).'::'.$_} = $_ for grep/UTF8chr|UTF8ord/, @_;
+  }
+}
 
 sub new {
   local $_;
@@ -50,7 +59,7 @@ sub _no{
   $val;
 }
 
-sub _UTFord{
+sub UTF8ord{
   my $str = shift || $_;
   my $len = length ($str);
 
@@ -65,6 +74,34 @@ sub _UTFord{
   $str += (($n[-4] & 0x0f) << 18) if $len == 4;
   return $str;
 }
+
+sub UTF8chr{
+  my $ord = shift || $_;
+  my @n;
+
+  #x00-x7f        #1 byte
+  if( $ord < 0x80 ){ 
+    @n = $ord; }
+  #x80-x7ff       #2 bytes
+  elsif( $ord < 0x800 ){
+    @n  = (0xc0|$ord>>6, 0x80|$ord&0x3f ); }
+  #x800-xffff     #3 bytes
+  elsif( $ord < 0x10000 ){
+    @n  = (0xe0|$ord>>12, 
+	   0x80|($ord>>6)&0x3f,
+	   0x80|$ord&0x3f ); }
+  #x10000-x10ffff #4 bytes
+  elsif( $ord<0x20000 ){
+    @n = (0xf0|$ord>>18,
+	  0x80|($ord>>12)&0x3f,
+	  0x80|($ord>>6)&0x3f,
+	  0x80|$ord&0x3f); }
+  else{
+    warn "Out of range for UTF-8: $ord"; }
+
+  return pack "C*", @n;
+}
+
 package Text::FIGlet::Control;
 require 5;
 use strict;
@@ -143,7 +180,7 @@ use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
 use Text::Wrap;
-$VERSION = 2.02;
+$VERSION = 2.03;
 
 sub new{
   shift();
@@ -231,7 +268,8 @@ sub _load_font{
 #     foreach my $i (3..$header[1]+2){
       foreach my $i (-$header[1]..-1){
 	#XXX Could we optimize this to next on the outer loop?
-        next unless exists($font->[$ord]->[2]);
+        #next unless exists($font->[$ord]->[2]); #55compat
+        next unless defined($font->[$ord]->[2]);
 
 	# The if protects from a a 5.6(.0)? bug
 	$font->[$ord]->[$i] =~ s/^\s{1,$font->[$ord]->[1]}//
@@ -349,7 +387,7 @@ sub figify{
 		 /$Text::FIGlet::RE{UTFchar}/g :
 		 /$Text::FIGlet::RE{bytechar}/g ){
 	    $opts{-A} .= "\0"x(($font->[
-					$opts{-U} ? Text::FIGlet::_UTFord($1) : ord($1)
+					$opts{-U} ? Text::FIGlet::UTF8ord($1) : ord($1)
 				       ]->[0]||1)-1) . $1
 	  }
 	}
@@ -365,7 +403,7 @@ sub figify{
       while( $opts{-U} ?
 	     /$Text::FIGlet::RE{UTFchar}/g :
 	     /$Text::FIGlet::RE{bytechar}/g ){
-	push @lchars, ($opts{-U} ? Text::FIGlet::_UTFord($1) : ord($1));
+	push @lchars, ($opts{-U} ? Text::FIGlet::UTF8ord($1) : ord($1));
       }
 
       foreach my $i (3..$self->{_header}->[1]+2){
@@ -397,11 +435,11 @@ sub figify{
     return wantarray ? @buffer : join($/, @buffer).$/;
 }
 1;
-#!/mit/belg4mit/arch/sun4x_59/bin/perl -w
+#!/usr/bin/perl -w
 package main;
 use strict;
 use vars '$VERSION';
-$VERSION = 2.1.2;
+$VERSION = 2.1.2; #2.02
 
 my %opts;
 $opts{-C} = [];

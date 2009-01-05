@@ -6,7 +6,7 @@ use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
 use Text::Wrap;
-$VERSION = 2.02;
+$VERSION = 2.03;
 
 sub new{
   shift();
@@ -88,7 +88,8 @@ sub _load_font{
 #     foreach my $i (3..$header[1]+2){
       foreach my $i (-$header[1]..-1){
 	#XXX Could we optimize this to next on the outer loop?
-        next unless exists($font->[$ord]->[2]);
+        #next unless exists($font->[$ord]->[2]); #55compat
+        next unless defined($font->[$ord]->[2]);
 
 	# The if protects from a a 5.6(.0)? bug
 	$font->[$ord]->[$i] =~ s/^\s{1,$font->[$ord]->[1]}//
@@ -206,7 +207,7 @@ sub figify{
 		 /$Text::FIGlet::RE{UTFchar}/g :
 		 /$Text::FIGlet::RE{bytechar}/g ){
 	    $opts{-A} .= "\0"x(($font->[
-					$opts{-U} ? Text::FIGlet::_UTFord($1) : ord($1)
+					$opts{-U} ? Text::FIGlet::UTF8ord($1) : ord($1)
 				       ]->[0]||1)-1) . $1
 	  }
 	}
@@ -222,7 +223,7 @@ sub figify{
       while( $opts{-U} ?
 	     /$Text::FIGlet::RE{UTFchar}/g :
 	     /$Text::FIGlet::RE{bytechar}/g ){
-	push @lchars, ($opts{-U} ? Text::FIGlet::_UTFord($1) : ord($1));
+	push @lchars, ($opts{-U} ? Text::FIGlet::UTF8ord($1) : ord($1));
       }
 
       foreach my $i (3..$self->{_header}->[1]+2){
@@ -267,7 +268,7 @@ Text::FIGlet::Font - text generation for Text::FIGlet
 
   my $font = Text::FIGlet->new(-f=>"doh");
 
-  print $font->figify(-A=>"Hello World");
+  print ~~$font->figify(-A=>"Hello World");
 
 =head1 DESCRIPTION
 
@@ -281,7 +282,10 @@ Text::FIGlet::Font can print in a variety of fonts, both left-to-right and
 right-to-left, with adjacent characters kerned and I<smushed> together in
 various ways. FIGlet fonts are stored in separate files, which can be
 identified by the suffix I<.flf>. Most FIGlet font files will be stored in
-FIGlet's default font directory.
+FIGlet's default font directory F</usr/games/lib/figlet>.
+
+This implementation is known to work with perl 5.005, 5.6 and 5.8,
+with support for Unicode characters in each. See L</CAVEATS> for details.
 
 =head1 OPTIONS
 
@@ -431,28 +435,33 @@ L<Text::FIGlet>, L<figlet(6)>
 
 =item $/ is used to create the output string in scalar context
 
+Consequently, make sure it is set appropriately i.e.;
+Don't mess with it, B<perl> sets it correctly for you.
+
 =item Pre-5.8 Unicode
 
-Perl 5.6 Unicode support was notriously sketchy. Best efforts have
+Perl 5.6 Unicode support was notoriously sketchy. Best efforts have
 been made to work around this, and things should work fine. If you
-have problems, favor C<"\x{...}"> over C<chr>.
+have problems, favor C<"\x{...}"> over C<chr>. See also L<Text::FIGlet/NOTES>
 
-=item Pre-5.6
+=item Pre-5.6 General support + Unicode
 
 This codebase was originally developed to be compatible with 5.005.03,
-but it has not been tested aganist it for sometime. Indeed, many of its
-dependencies (core packages) don't seem to even acknowledge the existence
-of such dated incarnations. Any reports on 
+and has recently been manually checked against 5.005.04. Unfortunately,
+the test suite makes use of code that is not compatable with versions
+of perl prior to 5.6
+
+Text::FIGlet B<does> provide limited support for Unicode in perl 5.005.
+It understands "literal Unicode characters" (UTF-8 sequences), and will
+emit the correct output, if the loaded font supports it.
+See also L<Text::FIGlet/NOTES>
 
 =item B<-m=>E<gt>'-0'
 
-#XXX
-Some fonts use 
+This is mode peculiar to Text::FIGlet, and as such, results will vary
+amongst fonts.
 
 =back
-
-Consequently, make sure it is set appropriately i.e.;
- Don't mess with it, B<perl> sets it correctly for you.
 
 =head1 AUTHOR
 

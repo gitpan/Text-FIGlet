@@ -5,7 +5,7 @@ use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.02; #1.07
+$VERSION = 2.03; #1.07
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;
@@ -16,6 +16,15 @@ $] >= 5.008 ? eval "use Encode;" : eval "sub Encode::_utf8_off {};";
        bytechar=> qr/(.)/,
        no      => qr/(-?)((0?)(?:x[\da-fA-F]+|\d+))/,
        );
+
+sub import{
+  @_ = qw/UTF8chr UTF8ord/ if grep(/:Encode/, @_);
+
+  if( @_ ) {
+    no strict 'refs';
+    *{scalar(caller).'::'.$_} = $_ for grep/UTF8chr|UTF8ord/, @_;
+  }
+}
 
 sub new {
   local $_;
@@ -51,7 +60,7 @@ sub _no{
   $val;
 }
 
-sub _UTFord{
+sub UTF8ord{
   my $str = shift || $_;
   my $len = length ($str);
 
@@ -66,6 +75,34 @@ sub _UTFord{
   $str += (($n[-4] & 0x0f) << 18) if $len == 4;
   return $str;
 }
+
+sub UTF8chr{
+  my $ord = shift || $_;
+  my @n;
+
+  #x00-x7f        #1 byte
+  if( $ord < 0x80 ){ 
+    @n = $ord; }
+  #x80-x7ff       #2 bytes
+  elsif( $ord < 0x800 ){
+    @n  = (0xc0|$ord>>6, 0x80|$ord&0x3f ); }
+  #x800-xffff     #3 bytes
+  elsif( $ord < 0x10000 ){
+    @n  = (0xe0|$ord>>12, 
+	   0x80|($ord>>6)&0x3f,
+	   0x80|$ord&0x3f ); }
+  #x10000-x10ffff #4 bytes
+  elsif( $ord<0x20000 ){
+    @n = (0xf0|$ord>>18,
+	  0x80|($ord>>12)&0x3f,
+	  0x80|($ord>>6)&0x3f,
+	  0x80|$ord&0x3f); }
+  else{
+    warn "Out of range for UTF-8: $ord"; }
+
+  return pack "C*", @n;
+}
+
 __END__
 1;
 =pod
@@ -184,6 +221,15 @@ There is limited support for negative character codes,
 at this time only characters -2 through -65_535 are supported.
 
 =back
+
+=head1 NOTES
+
+If you are using perl 5.005 and wish to try to acces Unicode characters
+programatically, or are frustrated by perl 5.6's Unicode support, you may
+try importing C<UTF8chr> from this module.
+
+This module also offers C<UTF8ord>, which is used internally, but may be
+of general use. To import both functiohs, use the B<:Encode> import tag.
 
 =head1 AUTHOR
 

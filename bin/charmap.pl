@@ -1,4 +1,4 @@
-#!/mit/belg4mit/arch/sun4x_59/bin/perl -w
+#!/usr/bin/perl -w
 use constant PRIVb => 0xF0000;
 use constant PRIVe => 0xFFFFD;
 use strict;
