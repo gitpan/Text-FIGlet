@@ -1,5 +1,4 @@
-use Test::Simple tests => 3;
-use Test::Differences;
+BEGIN{ exit -1 if $] < 5.006; eval "use Test::Simple tests => 3; use Test::Differences";}
 use Text::FIGlet;
 
 my $font = Text::FIGlet->new(-d=>'share');

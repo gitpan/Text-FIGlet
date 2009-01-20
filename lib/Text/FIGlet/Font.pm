@@ -6,11 +6,11 @@ use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
 use Text::Wrap;
-$VERSION = 2.03;
+$VERSION = 2.04;
 
 sub new{
   shift();
-  my $self = {_maxLen=>0, @_};
+  my $self = {_maxLen=>0, -U=>-1, @_};
   $self->{-f} ||= $ENV{FIGFONT} || 'standard';
   $self->{-d} ||= $ENV{FIGLIB}  || '/usr/games/lib/figlet/';
   _load_font($self);
@@ -46,7 +46,6 @@ sub _load_font{
   #Discard comments
   <FLF> for 1 .. $header[5] || carp("Unexpected end of font file") && last;
 
-#  $REwhite = qr/(?:^\s+)|(?:\s+(?=$header[0]*\s*$))/;
   #Get ASCII characters
   foreach my $i(32..126){
     &_load_char($self, $i) || last;
@@ -60,34 +59,43 @@ sub _load_font{
       &_load_char($self, $D{$k}) || last;
     }
     if( $self->{-D} ){
+      #removal is necessary to prevent 2nd reference to same figchar,
+      #which would then become over-smushed; alas 5.005 can't delete arrays
       $font->[$_] = $font->[$D{$_}] for keys %D;
+      undef($font->[$_]) for values %D;
     }
   }
 
+  #ASCII bypass
+  close(FLF) unless $self->{-U};
 
-  #XXX negative character codes!!!
-  #Extended characters, read extra line to get code
+  #Extended characters, with extra readline to get code
   until( eof(FLF) ){
     $_ = <FLF> || carp("Unexpected end of font file") && last;
 
     /^\s*$Text::FIGlet::RE{no}/;
     last unless $2;
-
     my $val = Text::FIGlet::_no($1, $2, $3, 1);
 
-    #Clobber German chars
-    $font->[$val] = '';
-
-    &_load_char($self, $val) || last;
+    #Bypass negative chars?
+    if( $val > Text::FIGlet::PRIVb && $self->{-U} == -1 ){
+	readline(FLF) for 0..$self->{_header}->[1]-1;
+    }
+    else{
+	#Clobber German chars
+	$font->[$val] = '';
+	&_load_char($self, $val) || last;
+    }
   }
   close(FLF);
+
 
   if( $self->{-m} eq '-0' ){
     my $pad;
     for(my $ord=0; $ord < scalar @{$font}; $ord++){
+      next unless defined $font->[$ord];
 #     foreach my $i (3..$header[1]+2){
       foreach my $i (-$header[1]..-1){
-	#XXX Could we optimize this to next on the outer loop?
         #next unless exists($font->[$ord]->[2]); #55compat
         next unless defined($font->[$ord]->[2]);
 
@@ -104,8 +112,8 @@ sub _load_font{
 
   if( $self->{-m} == -1 ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
+      next unless defined $font->[$ord];
       foreach my $i (-$header[1]..-1){
-	#XXX Could we optimize this to next on the outer loop?
 	next unless $font->[$ord]->[$i];
 	# The if protects from a a 5.6(.0)? bug
 	$font->[$ord]->[$i] =~ s/^\s{1,$font->[$ord]->[1]}//
@@ -118,8 +126,8 @@ sub _load_font{
 
   if( $self->{-m} > -1 && $self->{-m} ne '-0' ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
+      next unless defined $font->[$ord];
       foreach my $i (-$header[1]..-1){
-	#XXX Could we optimize this to next on the outer loop?
 	next unless $font->[$ord]->[$i];
 	# The if protects from a a 5.6(.0)? bug
 	$font->[$ord]->[$i] =~ s/^\s{1,$font->[$ord]->[1]}//
@@ -241,7 +249,7 @@ sub figify{
 	}
 	
 	
-	#Do some more text formatting here... (smushing)
+	#Do some more text formatting here... (smushing?)
 	$opts{-x} ||= $opts{-X} eq 'R' ? 'r' : 'l';
 	if( $opts{-x} eq 'c' ){
 	  $line = " "x(($opts{-w}-length($line))/2) . $line;
@@ -306,10 +314,11 @@ L<Text::FIGlet::Control>.
 
 =item B<-U=E<gt>>I<boolean>
 
-Process input as Unicode (UTF-8).
+A true value, the default, is necessary to load Unicode font data;
+regardless of your version of perl
 
-B<Note that this is necessary if you are mapping in negative characters,
-with a control file>, regardless of your verison of perl.
+B<Note that you must explicitly specify I<1> if you are mapping in negative
+characters with a control file>. See L</CAVEATS> for more details.
 
 =item B<-f=E<gt>>F<fontfile>
 
@@ -372,6 +381,14 @@ Returns a a string or list of lines, depending on context.
 =item B<-A=E<gt>>I<text>
 
 The text to transmogrify.
+
+=item B<-U=E<gt>>I<boolean>
+
+Process input as Unicode (UTF-8).
+
+B<Note that this applies regardless of your version of perl>,
+and is necessary if you are mapping in negative characters
+with a control file.
 
 =item B<-X=E<gt>>[LR]
 
@@ -438,30 +455,66 @@ L<Text::FIGlet>, L<figlet(6)>
 Consequently, make sure it is set appropriately i.e.;
 Don't mess with it, B<perl> sets it correctly for you.
 
-=item Pre-5.8 Unicode
+=item B<-m=>E<gt>'-0'
+
+This mode is peculiar to Text::FIGlet, and as such, results will vary
+amongst fonts.
+
+=item Support for pre-5.6 perl
+
+This codebase was originally developed to be compatible with 5.005.03,
+and has recently been manually checked against 5.005.04. Unfortunately,
+the default test suite makes use of code that is not compatable with
+versions of perl prior to 5.6. F<test.pl> attempts to work around this
+to provide some basic testing of functionality.
+
+=back
+
+=head2 Unicode
+
+=over
+
+=item Pre-5.8
 
 Perl 5.6 Unicode support was notoriously sketchy. Best efforts have
 been made to work around this, and things should work fine. If you
 have problems, favor C<"\x{...}"> over C<chr>. See also L<Text::FIGlet/NOTES>
 
-=item Pre-5.6 General support + Unicode
-
-This codebase was originally developed to be compatible with 5.005.03,
-and has recently been manually checked against 5.005.04. Unfortunately,
-the test suite makes use of code that is not compatable with versions
-of perl prior to 5.6
+=item Pre-5.6
 
 Text::FIGlet B<does> provide limited support for Unicode in perl 5.005.
 It understands "literal Unicode characters" (UTF-8 sequences), and will
-emit the correct output, if the loaded font supports it.
+emit the correct output if the loaded font supports it. It does not
+support negative character mapping at this time.
 See also L<Text::FIGlet/NOTES>
 
-=item B<-m=>E<gt>'-0'
+=back
 
-This is mode peculiar to Text::FIGlet, and as such, results will vary
-amongst fonts.
+=head2 Memory
+
+The standard font is 4Mb with no optimizations.
+
+Listed below are increasingly severe means of reducing energy use.
+
+=over
+
+=item B<-U=E<gt>>-1>
+
+This loads Unicode fonts, but skips negative characters. It's the default.
+
+The standard font is 68kb with this optimization.
+
+=item B<-U=E<gt>>0>
+
+This only loads ASCII characters; plus the Deutsch characters if -D is true.
+
+The standard font is 14kb with this optimization.
 
 =back
+
+=head1 RESTRICTIONS
+
+There is support for negative characters -1 through -65,536.
 
 =head1 AUTHOR
 

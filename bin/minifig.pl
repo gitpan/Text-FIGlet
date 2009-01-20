@@ -6,7 +6,7 @@ use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.03; #1.07
+$VERSION = 2.04; #2.03
 
 
 $] >= 5.008 ? eval "use Encode;" : eval "sub Encode::_utf8_off {};";
@@ -180,11 +180,11 @@ use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
 use Text::Wrap;
-$VERSION = 2.03;
+$VERSION = 2.04;
 
 sub new{
   shift();
-  my $self = {_maxLen=>0, @_};
+  my $self = {_maxLen=>0, -U=>-1, @_};
   $self->{-f} ||= $ENV{FIGFONT} ;
   $self->{-d} ||= $ENV{FIGLIB}  || '/usr/games/lib/figlet/';
   _load_font($self);
@@ -226,7 +226,6 @@ sub _load_font{
   #Discard comments
   <FLF> for 1 .. $header[5] || carp("Unexpected end of font file") && last;
 
-#  $REwhite = qr/(?:^\s+)|(?:\s+(?=$header[0]*\s*$))/;
   #Get ASCII characters
   foreach my $i(32..126){
     &_load_char($self, $i) || last;
@@ -240,34 +239,42 @@ sub _load_font{
       &_load_char($self, $D{$k}) || last;
     }
     if( $self->{-D} ){
+      #delete is necessary to prevent 2nd reference to same figchar,
+      #which would then become over-smushed; alas 5.005 can't delete arrays
       $font->[$_] = $font->[$D{$_}] for keys %D;
+      undef($font->[$_]) for values %D;
     }
   }
 
+  #Extended characters (with extra readline to get code) or 1-byte bypass
+  close(FLF) unless $self->{-U};
 
-  #XXX negative character codes!!!
-  #Extended characters, read extra line to get code
   until( eof(FLF) ){
     $_ = <FLF> || carp("Unexpected end of font file") && last;
 
     /^\s*$Text::FIGlet::RE{no}/;
     last unless $2;
-
     my $val = Text::FIGlet::_no($1, $2, $3, 1);
 
-    #Clobber German chars
-    $font->[$val] = '';
-
-    &_load_char($self, $val) || last;
+    #Bypass negative chars?
+    if( $val > Text::FIGlet::PRIVb && $self->{-U} == -1 ){
+	readline(FLF) for 0..$self->{_header}->[1]-1;
+    }
+    else{
+	#Clobber German chars
+	$font->[$val] = '';
+	&_load_char($self, $val) || last;
+    }
   }
   close(FLF);
+
 
   if( $self->{-m} eq '-0' ){
     my $pad;
     for(my $ord=0; $ord < scalar @{$font}; $ord++){
+      next unless defined $font->[$ord];
 #     foreach my $i (3..$header[1]+2){
       foreach my $i (-$header[1]..-1){
-	#XXX Could we optimize this to next on the outer loop?
         #next unless exists($font->[$ord]->[2]); #55compat
         next unless defined($font->[$ord]->[2]);
 
@@ -284,8 +291,8 @@ sub _load_font{
 
   if( $self->{-m} == -1 ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
+      next unless defined $font->[$ord];
       foreach my $i (-$header[1]..-1){
-	#XXX Could we optimize this to next on the outer loop?
 	next unless $font->[$ord]->[$i];
 	# The if protects from a a 5.6(.0)? bug
 	$font->[$ord]->[$i] =~ s/^\s{1,$font->[$ord]->[1]}//
@@ -296,10 +303,11 @@ sub _load_font{
     }
   }
 
+#XXX 1-byte bypass leading space strip funkiness is here
   if( $self->{-m} > -1 && $self->{-m} ne '-0' ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
+      next unless defined $font->[$ord];
       foreach my $i (-$header[1]..-1){
-	#XXX Could we optimize this to next on the outer loop?
 	next unless $font->[$ord]->[$i];
 	# The if protects from a a 5.6(.0)? bug
 	$font->[$ord]->[$i] =~ s/^\s{1,$font->[$ord]->[1]}//

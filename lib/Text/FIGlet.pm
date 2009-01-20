@@ -5,7 +5,7 @@ use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.03; #1.07
+$VERSION = 2.04; #2.03
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;

@@ -181,6 +181,16 @@ FIGlet control files are available at
 
   ftp://ftp.figlet.org/pub/figlet/
 
+=head1 CAVEATS
+
+There is a mystery bug in perls 5.6.1 and 5.6.2 which can cause seemingly
+transliterations to fail. The standard figlet(1) F<upper.flc> is an example
+of such a transliteration. For this reason, the enclosed F<upper.flc> uses
+a C<freeze> after the ASCII swapping. I've no idea why, but it seems to work.
+If you experience similar problems with other control files, try some shotgun
+debugging with freezes yourself. Modern perls, 5.6.0 and even 5.005_05 do not
+have this problem.
+
 =head1 SEE ALSO
 
 L<Text::FIGlet>, L<figlet(6)>, L<tr(1)>

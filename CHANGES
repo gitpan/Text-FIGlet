@@ -1,6 +1,17 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
+2.04	Tue Jan 20 02:04 EST 2009
+	- Fixed a bug in figlet's upper.flc which prevented a-macron from being
+	  transliterated to A-macron; and perhaps problems for remaining chars.
+	- Fixed test #2 to work on Windows; File::Spec didn't remove trailing /
+	- Added testing support for 5.005 in an underhanded way
+	- Added work-around to upper.flc for a bug in perl 5.6.1 & 5.6.2
+	- Added memory conservation options
+	- Fix subtle, previously invisible bug in -D that bubbled up w/ -U=>0
+	- Clarify documentation
+	- Major speed-up (up to 4x) for loading of sparse fonts.
+
 2.03	Sun Jan  4 21:14 EST 2009
 	- Fix example uses in documentation to include scalar cast
 	- Further updats to Unicode documentation, and verify 5.005 works.

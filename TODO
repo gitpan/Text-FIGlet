@@ -1,18 +1,13 @@
+TEST
+	-x, -X
+	-U=0, -U=-1
+
 VRFY
 	Test::Differences dependency?
 
 	grep for XXX, "patches"
 
 	bin tools versions
-
-CAVEAT
-	Negative char performance. Note about load time/memory hit?
-
-	-m=-0
-	a) keep current hack on hack
-	b) use header width
-
-	may break, depending on Text::Wrap?
 
 charmapl.pl
 	Text::Wrap in 5.6 is broken :-P so >0xff are wrapped
@@ -26,13 +21,13 @@ Refactor
 		dprof
 
         Negative Char performance
-		 Hash(collision performance hit)?
-
-		 2nd array(code complexity?)?
-
 		 Pre-allocating length halves size of array,
 		 req. scan file for - 1st, seek/read backwards? iff -U
 		     (assumes sane file order, but is okay for optimization?)
+
+		 Hash(collision performance hit)?
+
+		 2nd array(code complexity?)?
 
 	char =[] can get blank chars to not be ref's?!
 
@@ -41,8 +36,14 @@ Refactor
 
         Native UTF8 in 5.8+?
 
+	-m=-0
+	a) keep current hack on hack
+	b) use header width
+
+	may break, depending on Text::Wrap?
+
 General
-	- zipped font support?
+	- zipped font support? use :zlib layer :-)
 	- smushing (-m=1|2|4|8|16|32)
 	  TOIlet -o/verlap mode? (partial lamination of each FIGchar)
           Would have to know what chars are "inside" the top letter for opacity
@@ -63,9 +64,9 @@ Control
 		$opts{-U} ? UTFchar : bytechar
 
 	if pre 5.6 ignore char > 0xFF and use \x.. syntax?!
-		switch to an OR'd s (for > 0xff)?
+		switch to s alternation (for > 0xff)?
 
-	cannot support unicode literals...?
+XXX	cannot support unicode literals...?
 		at all (#$#@, could translate to \x{} notation)
 
 		just pre 5.6 (could translate to s///)
