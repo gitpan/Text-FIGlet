@@ -1,5 +1,10 @@
+FIX
+	rt.cpan?
+
+	premature wrapping if wide character glyph fragments
+	     relatively simple in modern perl, but not older
+
 TEST
-	-x, -X
 	-U=0, -U=-1
 
 VRFY
@@ -31,6 +36,9 @@ Refactor
 
 	char =[] can get blank chars to not be ref's?!
 
+	detect if glyph has been seen before, and reference it?
+	       potential over-smushification problem
+
 	reduce reliance upon $/
 		ammend split expression?
 
@@ -42,8 +50,10 @@ Refactor
 
 	may break, depending on Text::Wrap?
 
+	use header[3] as initial approximation of char width,
+	to help nix up-to 0x7e heuristic
+
 General
-	- zipped font support? use :zlib layer :-)
 	- smushing (-m=1|2|4|8|16|32)
 	  TOIlet -o/verlap mode? (partial lamination of each FIGchar)
           Would have to know what chars are "inside" the top letter for opacity

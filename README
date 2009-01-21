@@ -25,8 +25,8 @@ DESCRIPTION
          * In F<startup.pl> create a Text::FIGlet object
            * figify text for the heads of Directory listings,
              and you look like a warm and fuzzy BBS
-           * create ornate text based counters or timestamps
-             on pages
+           * create ornate text based counters or timestamps on pages
+	   * {shudder} CAPTCHA bots
 
      Or not, I just make the scissors, now run along.
 
@@ -64,5 +64,5 @@ INSTALLATION
 
 perl Makefile.PL
 make test
-make install
 bin/figlet.pl -d share
+make install

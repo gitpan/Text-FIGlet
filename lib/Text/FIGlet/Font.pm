@@ -5,8 +5,9 @@ use vars qw($REwhite $VERSION);
 use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
+use Symbol; #5.005 support
 use Text::Wrap;
-$VERSION = 2.04;
+$VERSION = 2.10;
 
 sub new{
   shift();
@@ -20,22 +21,34 @@ sub new{
 sub _load_font{
   my $self = shift();
   my $font = $self->{_font} = [];
-  my(@header, $header, $path);
-  local($_, *FLF);
+  my(@header, $header, $path, $ext);
+  local($_);
 
 #MAGIC minifig0
-  ($self->{_file}, $path) = fileparse($self->{-f}, '\.flf');
+  ($self->{_file}, $path, $ext) = fileparse($self->{-f}, qr/\.[ft]lf/);
   $path = $self->{-d} if $path eq './' && index($self->{-f}, './') < 0;
-  $self->{_file} = File::Spec->catfile($path, $self->{_file}.'.flf');
-  open(FLF, $self->{_file}) || croak("$!: $self->{_file}");
+  $self->{_file} = File::Spec->catfile($path, $self->{_file}.$ext);
+  $self->{_file} = (glob($self->{_file}.'.?lf'))[0] unless
+      $ext && -e $self->{_file};
+
+  #open(FLF, $self->{_file}) || croak("$!: $self->{_file}");
+  $self->{_fh} = gensym; #5.005 support
+  eval "use IO::Uncompress::Unzip";
+  unless( $@ ){
+      $self->{_fh} = IO::Uncompress::Unzip->new($self->{_file}) ||
+	  croak("$!: $self->{_file}");
+  }
+  else{
+      open($self->{_fh}, '<'.$self->{_file}) || croak("$!: $self->{_file}");
+  }
 #MAGIC minifig1
 
-  chomp($header = <FLF>);
-  croak("Invalid figlet 2 font") unless $header =~ /^flf2/;
+  chomp($header = readline($self->{_fh}));
+  croak("Invalid figlet 2 font") unless $header =~ /^[ft]lf2/;
 
   #flf2ahardblank height up_ht maxlen smushmode cmt_count rtol
   @header = split(/\s+/, $header);
-  $header[0] =~ s/^flf2.//;
+  $header[0] =~ s/^[ft]lf2.//;
   $header[0] = quotemeta($header[0]);
   $self->{_header} = \@header;
 
@@ -44,7 +57,7 @@ sub _load_font{
   }
 
   #Discard comments
-  <FLF> for 1 .. $header[5] || carp("Unexpected end of font file") && last;
+  readline($self->{_fh}) for 1 .. $header[5] || carp("Unexpected end of font file") && last;
 
   #Get ASCII characters
   foreach my $i(32..126){
@@ -52,26 +65,26 @@ sub _load_font{
   }
 
   #German characters?
-  unless( eof(FLF) ){
+  unless( eof($self->{_fh}) ){
     my %D =(91=>196, 92=>214, 93=>220, 123=>228, 124=>246, 125=>252, 126=>223);
 
     foreach my $k ( sort {$a <=> $b} keys %D ){
       &_load_char($self, $D{$k}) || last;
     }
     if( $self->{-D} ){
+      $font->[$_] = $font->[$D{$_}] for keys %D;
       #removal is necessary to prevent 2nd reference to same figchar,
       #which would then become over-smushed; alas 5.005 can't delete arrays
-      $font->[$_] = $font->[$D{$_}] for keys %D;
-      undef($font->[$_]) for values %D;
+      $#{$font} = 126; #undef($font->[$_]) for values %D;
     }
   }
 
   #ASCII bypass
-  close(FLF) unless $self->{-U};
+  close($self->{_fh}) unless $self->{-U};
 
   #Extended characters, with extra readline to get code
-  until( eof(FLF) ){
-    $_ = <FLF> || carp("Unexpected end of font file") && last;
+  until( eof($self->{_fh}) ){
+    $_ = readline($self->{_fh}) || carp("Unexpected end of font file") && last;
 
     /^\s*$Text::FIGlet::RE{no}/;
     last unless $2;
@@ -79,7 +92,7 @@ sub _load_font{
 
     #Bypass negative chars?
     if( $val > Text::FIGlet::PRIVb && $self->{-U} == -1 ){
-	readline(FLF) for 0..$self->{_header}->[1]-1;
+	readline($self->{_fh}) for 0..$self->{_header}->[1]-1;
     }
     else{
 	#Clobber German chars
@@ -87,7 +100,7 @@ sub _load_font{
 	&_load_char($self, $val) || last;
     }
   }
-  close(FLF);
+  close($self->{_fh});
 
 
   if( $self->{-m} eq '-0' ){
@@ -146,14 +159,14 @@ sub _load_char{
   
   my $REtrail;
   foreach my $j (0..$self->{_header}->[1]-1){
-    $line = $_ = <FLF> ||
+    $line = $_ = readline($self->{_fh}) ||
       carp("Unexpected end of font file") && return 0;
     #This is the end.... this is the end my friend
     unless( $REtrail ){
       /(.)\s*$/;
       $end = $1;
 #XXX  $REtrail = qr/([ $self->{_header}->[0]]+)$end{1,2}\s*$/;
-      $REtrail = qr/([ $self->{_header}->[0]]+)$end$end?\s*$/;
+      $REtrail = qr/([ $self->{_header}->[0]]+)\Q$end$end\E?\s*$/;
     }
     if( $wLead && s/^(\s+)// ){
       $wLead  = $l if ($l = length($1)) < $wLead;
@@ -167,14 +180,14 @@ sub _load_char{
     else{
       $wTrail = 0;
     }
-    $length = $l if ($l = length($_)-1-(s/$end+$/$end/mog)) > $length;
+    $length = $l if ($l = length($_)-1-(s/\Q$end\E+$/$end/mog)) > $length;
     $font->[$i] .= $line;
   }
   #XXX :-/ stop trying at 125 in case of map in ~ or extended....
   $self->{_maxLen} = $length if $i < 126 && $self->{_maxLen} < $length;
 
   #Ideally this would be /o but then all figchar's must have same EOL
-  $font->[$i] =~ s/$end|\015//g;
+  $font->[$i] =~ s/\Q$end\E|\015//g;
   $font->[$i] = [$length,#maxLen
 			  $wLead, #wLead
 			  $wTrail,#wTrail
@@ -281,16 +294,17 @@ Text::FIGlet::Font - text generation for Text::FIGlet
 =head1 DESCRIPTION
 
 Text::FIGlet::Font reproduces its input using large characters made up of
-ordinary screen characters. Text::FIGlet::Font output is generally
-reminiscent of the sort of I<signatures> many people like to put at the
-end of e-mail and UseNet messages. It is also reminiscent of the output
-of some banner programs, although it is oriented normally, not sideways.
+other characters; usually ASCII, but not necessarily. The output is similar
+to that of many banner programs--although it is not oriented sideways--and
+reminiscent of the sort of I<signatures> many people like to put at the end
+of e-mail and UseNet messages.
 
 Text::FIGlet::Font can print in a variety of fonts, both left-to-right and
 right-to-left, with adjacent characters kerned and I<smushed> together in
 various ways. FIGlet fonts are stored in separate files, which can be
 identified by the suffix I<.flf>. Most FIGlet font files will be stored in
-FIGlet's default font directory F</usr/games/lib/figlet>.
+FIGlet's default font directory F</usr/games/lib/figlet>. Support for TOIlet
+fonts I<*.tlf>, which are typically in the same location, has also been added.
 
 This implementation is known to work with perl 5.005, 5.6 and 5.8,
 with support for Unicode characters in each. See L</CAVEATS> for details.
@@ -322,9 +336,9 @@ characters with a control file>. See L</CAVEATS> for more details.
 
 =item B<-f=E<gt>>F<fontfile>
 
-The font to load.
+The font to load; defaults to F<standard>.
 
-Defaults to F<standard>
+The fontfile may be zipped if L<IO::Uncompress::Unzip> is available.
 
 =item B<-m=E<gt>>I<smushmode>
 
@@ -511,6 +525,12 @@ This only loads ASCII characters; plus the Deutsch characters if -D is true.
 The standard font is 14kb with this optimization.
 
 =back
+
+=head1 BUGS
+
+Inclusion of wide characters (UTF8) as glyph fragments,
+as in many TOIlet fonts, will cause premature wrapping.
+A work-around is to pass a B<-w> 2 or 3 times the width needed.
 
 =head1 RESTRICTIONS
 

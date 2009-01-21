@@ -6,7 +6,7 @@ use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.04; #2.03
+$VERSION = 2.10; #2.10
 
 
 $] >= 5.008 ? eval "use Encode;" : eval "sub Encode::_utf8_off {};";
@@ -179,8 +179,9 @@ use vars qw($REwhite $VERSION);
 use Carp qw(carp croak);
 use File::Spec;
 use File::Basename qw(fileparse);
+use Symbol; #5.005 support
 use Text::Wrap;
-$VERSION = 2.04;
+$VERSION = 2.10;
 
 sub new{
   shift();
@@ -194,14 +195,26 @@ sub new{
 sub _load_font{
   my $self = shift();
   my $font = $self->{_font} = [];
-  my(@header, $header, $path);
-  local($_, *FLF);
+  my(@header, $header, $path, $ext);
+  local($_);
 
   if ( $self->{-f} ) {
-  ($self->{_file}, $path) = fileparse($self->{-f}, '\.flf');
+  ($self->{_file}, $path, $ext) = fileparse($self->{-f}, qr/\.[ft]lf/);
   $path = $self->{-d} if $path eq './' && index($self->{-f}, './') < 0;
-  $self->{_file} = File::Spec->catfile($path, $self->{_file}.'.flf');
-  open(FLF, $self->{_file}) || croak("$!: $self->{_file}");
+  $self->{_file} = File::Spec->catfile($path, $self->{_file}.$ext);
+  $self->{_file} = (glob($self->{_file}.'.?lf'))[0] unless
+      $ext && -e $self->{_file};
+
+  #open(FLF, $self->{_file}) || croak("$!: $self->{_file}");
+  $self->{_fh} = gensym; #5.005 support
+  eval "use IO::Uncompress::Unzip";
+  unless( $@ ){
+      $self->{_fh} = IO::Uncompress::Unzip->new($self->{_file}) ||
+	  croak("$!: $self->{_file}");
+  }
+  else{
+      open($self->{_fh}, '<'.$self->{_file}) || croak("$!: $self->{_file}");
+  }
   } else {
     *FLF = *main::DATA;
     while ( <FLF> ) {
@@ -210,12 +223,12 @@ sub _load_font{
   }
 
 
-  chomp($header = <FLF>);
-  croak("Invalid figlet 2 font") unless $header =~ /^flf2/;
+  chomp($header = readline($self->{_fh}));
+  croak("Invalid figlet 2 font") unless $header =~ /^[ft]lf2/;
 
   #flf2ahardblank height up_ht maxlen smushmode cmt_count rtol
   @header = split(/\s+/, $header);
-  $header[0] =~ s/^flf2.//;
+  $header[0] =~ s/^[ft]lf2.//;
   $header[0] = quotemeta($header[0]);
   $self->{_header} = \@header;
 
@@ -224,7 +237,7 @@ sub _load_font{
   }
 
   #Discard comments
-  <FLF> for 1 .. $header[5] || carp("Unexpected end of font file") && last;
+  readline($self->{_fh}) for 1 .. $header[5] || carp("Unexpected end of font file") && last;
 
   #Get ASCII characters
   foreach my $i(32..126){
@@ -232,25 +245,26 @@ sub _load_font{
   }
 
   #German characters?
-  unless( eof(FLF) ){
+  unless( eof($self->{_fh}) ){
     my %D =(91=>196, 92=>214, 93=>220, 123=>228, 124=>246, 125=>252, 126=>223);
 
     foreach my $k ( sort {$a <=> $b} keys %D ){
       &_load_char($self, $D{$k}) || last;
     }
     if( $self->{-D} ){
-      #delete is necessary to prevent 2nd reference to same figchar,
-      #which would then become over-smushed; alas 5.005 can't delete arrays
       $font->[$_] = $font->[$D{$_}] for keys %D;
-      undef($font->[$_]) for values %D;
+      #removal is necessary to prevent 2nd reference to same figchar,
+      #which would then become over-smushed; alas 5.005 can't delete arrays
+      $#{$font} = 126; #undef($font->[$_]) for values %D;
     }
   }
 
-  #Extended characters (with extra readline to get code) or 1-byte bypass
-  close(FLF) unless $self->{-U};
+  #ASCII bypass
+  close($self->{_fh}) unless $self->{-U};
 
-  until( eof(FLF) ){
-    $_ = <FLF> || carp("Unexpected end of font file") && last;
+  #Extended characters, with extra readline to get code
+  until( eof($self->{_fh}) ){
+    $_ = readline($self->{_fh}) || carp("Unexpected end of font file") && last;
 
     /^\s*$Text::FIGlet::RE{no}/;
     last unless $2;
@@ -258,7 +272,7 @@ sub _load_font{
 
     #Bypass negative chars?
     if( $val > Text::FIGlet::PRIVb && $self->{-U} == -1 ){
-	readline(FLF) for 0..$self->{_header}->[1]-1;
+	readline($self->{_fh}) for 0..$self->{_header}->[1]-1;
     }
     else{
 	#Clobber German chars
@@ -266,7 +280,7 @@ sub _load_font{
 	&_load_char($self, $val) || last;
     }
   }
-  close(FLF);
+  close($self->{_fh});
 
 
   if( $self->{-m} eq '-0' ){
@@ -303,7 +317,6 @@ sub _load_font{
     }
   }
 
-#XXX 1-byte bypass leading space strip funkiness is here
   if( $self->{-m} > -1 && $self->{-m} ne '-0' ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
       next unless defined $font->[$ord];
@@ -326,14 +339,14 @@ sub _load_char{
   
   my $REtrail;
   foreach my $j (0..$self->{_header}->[1]-1){
-    $line = $_ = <FLF> ||
+    $line = $_ = readline($self->{_fh}) ||
       carp("Unexpected end of font file") && return 0;
     #This is the end.... this is the end my friend
     unless( $REtrail ){
       /(.)\s*$/;
       $end = $1;
 #XXX  $REtrail = qr/([ $self->{_header}->[0]]+)$end{1,2}\s*$/;
-      $REtrail = qr/([ $self->{_header}->[0]]+)$end$end?\s*$/;
+      $REtrail = qr/([ $self->{_header}->[0]]+)\Q$end$end\E?\s*$/;
     }
     if( $wLead && s/^(\s+)// ){
       $wLead  = $l if ($l = length($1)) < $wLead;
@@ -347,14 +360,14 @@ sub _load_char{
     else{
       $wTrail = 0;
     }
-    $length = $l if ($l = length($_)-1-(s/$end+$/$end/mog)) > $length;
+    $length = $l if ($l = length($_)-1-(s/\Q$end\E+$/$end/mog)) > $length;
     $font->[$i] .= $line;
   }
   #XXX :-/ stop trying at 125 in case of map in ~ or extended....
   $self->{_maxLen} = $length if $i < 126 && $self->{_maxLen} < $length;
 
   #Ideally this would be /o but then all figchar's must have same EOL
-  $font->[$i] =~ s/$end|\015//g;
+  $font->[$i] =~ s/\Q$end\E|\015//g;
   $font->[$i] = [$length,#maxLen
 			  $wLead, #wLead
 			  $wTrail,#wTrail
@@ -429,7 +442,7 @@ sub figify{
 	}
 	
 	
-	#Do some more text formatting here... (smushing)
+	#Do some more text formatting here... (smushing?)
 	$opts{-x} ||= $opts{-X} eq 'R' ? 'r' : 'l';
 	if( $opts{-x} eq 'c' ){
 	  $line = " "x(($opts{-w}-length($line))/2) . $line;

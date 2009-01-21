@@ -1,8 +1,15 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
+2.10	Wed Jan 21 02:35 EST 2009
+	- Added support for zipped fonts if IO::Uncompress::Unzip is available.
+	- Provisional support for TOIlet fonts
+	- Fixed a bug uncovered while playing with circle.tlf above
+	- More thorough testing: -E deutsch mapped characters, -X, -x
+	- Added missing 5.005 test.pl to MANIFEST
+
 2.04	Tue Jan 20 02:04 EST 2009
-	- Fixed a bug in figlet's upper.flc which prevented a-macron from being
+	- Fixed bugs in figlet's upper.flc which prevented a-macron from being
 	  transliterated to A-macron; and perhaps problems for remaining chars.
 	- Fixed test #2 to work on Windows; File::Spec didn't remove trailing /
 	- Added testing support for 5.005 in an underhanded way

@@ -2,32 +2,13 @@ BEGIN{ exit -1 if $] < 5.006; eval "use Test::Simple tests => 4; use Test::Diffe
 use Text::FIGlet;
 
 
+#0 implicit -d test
+my $font = Text::FIGlet->new(-d=>'t', -f=>'2', -U=>1);
+
+
 #1
-$ENV{FIGLIB} = 'share';
-ok( defined(my $ctrl = Text::FIGlet->new(-C=>'upper.flc')), 'FIGLIB');
-
-
-#2
-my $txt2 =<<'CTRL';
- _   _  _____  _      _       ___   __        __  ___   ____   _      ____  
-| | | || ____|| |    | |     / _ \  \ \      / / / _ \ |  _ \ | |    |  _ \ 
-| |_| ||  _|  | |    | |    | | | |  \ \ /\ / / | | | || |_) || |    | | | |
-|  _  || |___ | |___ | |___ | |_| |   \ V  V /  | |_| ||  _ < | |___ | |_| |
-|_| |_||_____||_____||_____| \___/     \_/\_/    \___/ |_| \_\|_____||____/ 
-                                                                            
-CTRL
-#eq_or_diff scalar $font->figify(-A=>$ctrl->tr('Hello World')), $txt2, "CTRL";
-eq_or_diff scalar $ctrl->tr('Hello World'), 'HELLO WORLD', "CTRL";
-
-
-#0
-$ENV{FIGLIB} = 't';
-my $font = Text::FIGlet->new(-f=>'2', -U=>1);
-
-
-#3
 #XX Skip if $] < 5.006;
-my $txt3=<<'UNICODE';
+my $txt1=<<'UNICODE';
  _\_/_ _ \\//
 |__  /| | \/ 
   / / | |    
@@ -35,14 +16,14 @@ my $txt3=<<'UNICODE';
 /____||_____|
              
 UNICODE
-eq_or_diff scalar $font->figify(-A=>"\x{17d}\x{13d}", -U=>1), $txt3, "Unicode";
+eq_or_diff scalar $font->figify(-A=>"\x{17d}\x{13d}", -U=>1), $txt1, "Unicode";
 
 
-#4
+#2
 print "#Neg. char mapping currently unvavail. in pre-5.6 perl\n" if $] < 5.006;
-$ctrl = Text::FIGlet->new(-C=>'2.flc') ||
+$ctrl = Text::FIGlet->new(-d=>'t', -C=>'2.flc') ||
   warn("#Failed to load negative character mapping control file: $!\n");
-my $txt4 = <<'-CHAR';
+my $txt2 = <<'-CHAR';
    
    
  o 
@@ -50,4 +31,23 @@ my $txt4 = <<'-CHAR';
 /| 
 \| 
 -CHAR
-eq_or_diff scalar $font->figify(-U=>1, -A=>$ctrl->tr('~')), $txt4, "-CHAR";
+eq_or_diff scalar $font->figify(-U=>1, -A=>$ctrl->tr('~')), $txt2, "-CHAR";
+
+
+#3
+eval {$font = Text::FIGlet->new(-d=>'share', -f=>'emboss') };
+$@ ? ok(-1, "SKIPPING Zlib: $@") :
+   ok(ref($font->{_fh}) eq 'IO::Uncompress::Unzip', 'Zlib');
+
+
+#4
+my $txt4 = <<'TOIlet';
+┃ ┃┏━┛┃  ┃  ┏━┃
+┏━┃┏━┛┃  ┃  ┃ ┃
+┛ ┛━━┛━━┛━━┛━━┛
+┃┃┃┏━┃┏━┃┃  ┏━ 
+┃┃┃┃ ┃┏┏┛┃  ┃ ┃
+━━┛━━┛┛ ┛━━┛━━ 
+TOIlet
+$@ ? ok(-1, "SKIPPING TOIlet w/o Zlib") :
+   eq_or_diff(scalar $font->figify(-A=>'Hello World'), $txt4, 'TOIlet');

@@ -1,7 +1,7 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Text-FIGlet
-version:      2.04
+version:      2.1
 version_from: lib/Text/FIGlet.pm
 installdirs:  site
 requires:

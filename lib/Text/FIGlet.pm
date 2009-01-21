@@ -5,7 +5,7 @@ use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.04; #2.03
+$VERSION = 2.10; #2.10
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;
@@ -118,25 +118,23 @@ Text::FIGlet - a perl module to provide FIGlet abilities, akin to banner
 
 =head1 DESCRIPTION
 
-FIGlet reproduces its input using large characters made up of
-ordinary screen characters. FIGlet output is generally
-reminiscent of the sort of I<signatures> many people like
-to put at the end of e-mail and UseNet messages. It is
-also reminiscent of the output of some banner programs,
-although it is oriented normally, not sideways.
+Text::FIGlet reproduces its input using large characters made up of
+other characters; usually ASCII, but not necessarily. The output is similar
+to that of many banner programs--although it is not oriented sideways--and
+reminiscent of the sort of I<signatures> many people like to put at the end
+of e-mail and UseNet messages.
 
-FIGlet can print in a variety of fonts, both left-to-right
-and right-to-left, with adjacent characters kerned and
-I<smushed> together in various ways. FIGlet fonts are
-stored in separate files, which can be identified by the
-suffix I<.flf>. Most FIGlet font files will be stored in
-FIGlet's default font directory.
+Text::FIGlet can print in a variety of fonts, both left-to-right and
+right-to-left, with adjacent characters kerned and I<smushed> together in
+various ways. FIGlet fonts are stored in separate files, which can be
+identified by the suffix I<.flf>. Most FIGlet font files will be stored in
+FIGlet's default font directory F</usr/games/lib/figlet>. Support for TOIlet
+fonts I<*.tlf>, which are typically in the same location, has also been added.
 
-FIGlet can also use control files, which tell it to
-map certain input characters to certain other characters,
-similar to the Unix tr command. Control files can be
-identified by the suffix I<.flc>. Most FIGlet control
-files will be stored in FIGlet's default font directory.
+Text::FIGlet can also use control files, which tell it to map input characters
+to others, similar to the Unix tr command. Control files can be identified by
+the suffix I<.flc>. Most control files will be stored with the system fonts,
+as some fonts use control files to provide access to foreign character sets.
 
 =head1 OPTIONS
 
@@ -176,7 +174,7 @@ for that warm and fuzzy BBS feeling.
 
 Text based clocks or counters at the bottom of web pages.
 
-Provide e-mail addresses etc. in a difficult to harvest manner, L<AUTHOR>.
+Anti-bot obfuscation a la L</AUTHOR>.
 
 =head1 ENVIRONMENT
 
@@ -205,11 +203,11 @@ FIGlet font files and control files are available at
  
 =head1 SEE ALSO
 
-L<Acme::Curses::Marquee::Extensions>
-
 L<figlet(6)>, L<http://www.figlet.org|http://www.figlet.org>
 
 L<banner(6)>, L<Text::Banner>
+
+L<Acme::Curses::Marquee::Extensions>, L<http://pthbb.org/ocular/text-art/>
 
 =head1 CAVEATS
 
