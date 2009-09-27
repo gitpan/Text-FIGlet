@@ -1,23 +1,38 @@
 FIX
-	rt.cpan?
+	wide character warnings in figlet/minifig/charmap if native
+	     support hack for proper wrapping
 
-	premature wrapping if wide character glyph fragments
+	premature wrapping of widechar glyph fragments...
 	     relatively simple in modern perl, but not older
+
+?	charmap for widechar/TOIlet fonts
+
+??	TOIlet permits widechars as EOL!
+
+	charmapl.pl
+		Text::Wrap in 5.6 is broken :-P so >0xff are wrapped
+
+	Control
+		literal needs to use $RE{UTFchar}
+			$opts{-U} = 1 if /^\s*/
+			$opts{-U} ? UTFchar : bytechar
+
+		if pre 5.6 ignore char > 0xFF and use \x.. syntax?!
+			switch to s alternation (for > 0xff)?
+
+	XXX	cannot support unicode literals...?
+			at all (#$#@, could translate to \x{} notation)
+
+			just pre 5.6 (could translate to s///)
+VRFY
+	grep for XXX, "patches"
 
 TEST
 	-U=0, -U=-1
 
-VRFY
-	Test::Differences dependency?
+REFACTOR
+	Switch to ::AnyInflate?
 
-	grep for XXX, "patches"
-
-	bin tools versions
-
-charmapl.pl
-	Text::Wrap in 5.6 is broken :-P so >0xff are wrapped
-
-Refactor
 	Benchmark
 		$font alias again
 
@@ -53,14 +68,12 @@ Refactor
 	use header[3] as initial approximation of char width,
 	to help nix up-to 0x7e heuristic
 
-General
+FEATURES
 	- smushing (-m=1|2|4|8|16|32)
 	  TOIlet -o/verlap mode? (partial lamination of each FIGchar)
           Would have to know what chars are "inside" the top letter for opacity
-	- controls; h j b g
-		- isn't u enough?
 	- "Vertical Fitting"?
-	- other scripts: chkfont
+
 	- Text::FIGlet::Mixed, for creating the anti-spambot style text
 		- mixed({
 			-f=>Text::FIGlet->new, #Font Object
@@ -68,15 +81,8 @@ General
 			pre=> CODREF,          #Control object, etc.
 			post=>CODEREF,         #eg; y/x/*/
 			} ... );
-Control
-	literal needs to use $RE{UTFchar}
-		$opts{-U} = 1 if /^\s*/
-		$opts{-U} ? UTFchar : bytechar
+	- add noise for "captcha"
 
-	if pre 5.6 ignore char > 0xFF and use \x.. syntax?!
-		switch to s alternation (for > 0xff)?
-
-XXX	cannot support unicode literals...?
-		at all (#$#@, could translate to \x{} notation)
-
-		just pre 5.6 (could translate to s///)
+	- controls; h j b g
+		- isn't u enough?
+	- other scripts: chkfont

@@ -5,7 +5,9 @@ use constant PRIVe => 0xFFFFD; #Private area
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
-$VERSION = 2.10; #2.10
+use File::Spec;
+use File::Basename 'fileparse';
+$VERSION = 2.11; #Actual code version: 2.11
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;
@@ -101,6 +103,17 @@ sub UTF8chr{
     warn "Out of range for UTF-8: $ord"; }
 
   return pack "C*", @n;
+}
+
+sub _canonical{
+  my($defdir, $usrfile, $extre, $backslash) = @_;
+
+  my($file, $path, $ext) = fileparse($usrfile, $extre);
+  $path =~ y/\\/\// if $backslash;
+  $path = $defdir if $path eq './' &&
+    index($usrfile, File::Spec->catfile(File::Spec->curdir, "")) < 0;
+  
+  return File::Spec->catfile($path, $file.$ext);
 }
 
 __END__
@@ -227,7 +240,7 @@ programatically, or are frustrated by perl 5.6's Unicode support, you may
 try importing C<UTF8chr> from this module.
 
 This module also offers C<UTF8ord>, which is used internally, but may be
-of general use. To import both functiohs, use the B<:Encode> import tag.
+of general use. To import both functions, use the B<:Encode> import tag.
 
 =head1 AUTHOR
 

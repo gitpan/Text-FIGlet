@@ -26,8 +26,8 @@ while( <PM> ){
 
 my $mini = <<'EOF';
   } else {
-    *FLF = *main::DATA;
-    while ( <FLF> ) {
+    my $fh = $self->{_fh} = *main::DATA;
+    while ( <$fh> ) {
       last if /__END__/;
     }
   }

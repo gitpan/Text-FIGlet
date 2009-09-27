@@ -4,7 +4,7 @@ use constant PRIVe => 0xFFFFD;
 use strict;
 use vars '$VERSION';
 use Text::FIGlet 2.01;
-$VERSION = 2.1.2_2;
+$VERSION = 2.1.2_2; #2.04
 
 my %opts;
 $opts{$_} = undef for
@@ -225,7 +225,7 @@ to  the  given integer.   An  outputwidth  of 1 is a
 special value that tells FIGlet to print each non-
 space  character, in its entirety, on a separate line,
 no matter how wide it is. Another special outputwidth
-is -1, it means to not warp.
+is -1, it means to not wrap.
 
 =back
 

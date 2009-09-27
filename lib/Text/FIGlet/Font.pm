@@ -2,12 +2,10 @@ package Text::FIGlet::Font;
 require 5;
 use strict;
 use vars qw($REwhite $VERSION);
-use Carp qw(carp croak);
-use File::Spec;
-use File::Basename qw(fileparse);
+use Carp qw(cluck confess);
 use Symbol; #5.005 support
 use Text::Wrap;
-$VERSION = 2.10;
+$VERSION = 2.11;
 
 sub new{
   shift();
@@ -25,31 +23,37 @@ sub _load_font{
   local($_);
 
 #MAGIC minifig0
-  ($self->{_file}, $path, $ext) = fileparse($self->{-f}, qr/\.[ft]lf/);
-  $path = $self->{-d} if $path eq './' && index($self->{-f}, './') < 0;
-  $self->{_file} = File::Spec->catfile($path, $self->{_file}.$ext);
-  $self->{_file} = (glob($self->{_file}.'.?lf'))[0] unless
-      $ext && -e $self->{_file};
+  $self->{'_file'} = Text::FIGlet::_canonical($self->{-d},
+					      $self->{-f},
+					      qr/\.[ft]lf/,
+					      $^O =~ /MSWin32|DOS/i);
+  $self->{_file} = (glob($self->{_file}.'.?lf'))[0] unless -e $self->{_file};
 
-  #open(FLF, $self->{_file}) || croak("$!: $self->{_file}");
-  $self->{_fh} = gensym; #5.005 support
-  eval "use IO::Uncompress::Unzip";
+
+  #open(FLF, $self->{_file}) || confess("$!: $self->{_file}");
+  $self->{_fh} = gensym;            #5.005 support
+  eval "use IO::Uncompress::Unzip"; #XXX sniff for 'PK\003\004'instead?
   unless( $@ ){
-      $self->{_fh} = IO::Uncompress::Unzip->new($self->{_file}) ||
-	  croak("$!: $self->{_file}");
+      $self->{_fh} = eval{ IO::Uncompress::Unzip->new($self->{_file}) } ||
+	  confess("No such file or directory: $self->{_file}");
   }
   else{
-      open($self->{_fh}, '<'.$self->{_file}) || croak("$!: $self->{_file}");
+      open($self->{_fh}, '<'.$self->{_file}) || confess("$!: $self->{_file}");
+      #$^W isn't mutable at runtime in 5.005, so we have to conditional eval
+      #to avoid "Useless use of constant in void context"
+      eval "binmode(\$fh, ':encoding(utf8)')" unless $] < 5.006;
   }
 #MAGIC minifig1
 
-  chomp($header = readline($self->{_fh}));
-  croak("Invalid figlet 2 font") unless $header =~ /^[ft]lf2/;
+  my $fh = $self->{_fh};  #5.005 support
+  chomp($header = <$fh>); #5.005 hates readline & $self->{_fh} :-/
+  confess("Invalid FIGlet 2/TOIlet font") unless $header =~ /^[ft]lf2/;
 
   #flf2ahardblank height up_ht maxlen smushmode cmt_count rtol
   @header = split(/\s+/, $header);
   $header[0] =~ s/^[ft]lf2.//;
   $header[0] = quotemeta($header[0]);
+#  $header[0] = qr/@{[sprintf "\\%o", ord($header[0])]}/;
   $self->{_header} = \@header;
 
   unless( exists($self->{-m}) && defined($self->{-m}) && $self->{-m} ne '-2' ){
@@ -57,7 +61,7 @@ sub _load_font{
   }
 
   #Discard comments
-  readline($self->{_fh}) for 1 .. $header[5] || carp("Unexpected end of font file") && last;
+  <$fh> for 1 .. $header[5] || cluck("Unexpected end of font file") && last;
 
   #Get ASCII characters
   foreach my $i(32..126){
@@ -65,7 +69,7 @@ sub _load_font{
   }
 
   #German characters?
-  unless( eof($self->{_fh}) ){
+  unless( eof($fh) ){
     my %D =(91=>196, 92=>214, 93=>220, 123=>228, 124=>246, 125=>252, 126=>223);
 
     foreach my $k ( sort {$a <=> $b} keys %D ){
@@ -80,11 +84,11 @@ sub _load_font{
   }
 
   #ASCII bypass
-  close($self->{_fh}) unless $self->{-U};
+  close($fh) unless $self->{-U};
 
   #Extended characters, with extra readline to get code
-  until( eof($self->{_fh}) ){
-    $_ = readline($self->{_fh}) || carp("Unexpected end of font file") && last;
+  until( eof($fh) ){
+    $_ = <$fh> || cluck("Unexpected end of font file") && last;
 
     /^\s*$Text::FIGlet::RE{no}/;
     last unless $2;
@@ -92,7 +96,7 @@ sub _load_font{
 
     #Bypass negative chars?
     if( $val > Text::FIGlet::PRIVb && $self->{-U} == -1 ){
-	readline($self->{_fh}) for 0..$self->{_header}->[1]-1;
+	readline($fh) for 0..$self->{_header}->[1]-1;
     }
     else{
 	#Clobber German chars
@@ -100,7 +104,7 @@ sub _load_font{
 	&_load_char($self, $val) || last;
     }
   }
-  close($self->{_fh});
+  close($fh);
 
 
   if( $self->{-m} eq '-0' ){
@@ -156,11 +160,13 @@ sub _load_char{
   my($length, $wLead, $wTrail, $end, $line, $l) = 0;
   
   $wLead = $wTrail = $self->{_header}->[3];
+
+  my $fh = $self->{_fh}; #5.005 support
   
   my $REtrail;
   foreach my $j (0..$self->{_header}->[1]-1){
-    $line = $_ = readline($self->{_fh}) ||
-      carp("Unexpected end of font file") && return 0;
+    $line = $_ = <$fh> ||
+      cluck("Unexpected end of font file") && return 0;
     #This is the end.... this is the end my friend
     unless( $REtrail ){
       /(.)\s*$/;
@@ -203,7 +209,7 @@ sub figify{
     local $_;
 
     $opts{-w} ||= 80;
-    $opts{-U} || Encode::_utf8_off($opts{-A}) if $] >= 5.008;
+    $opts{-U} || &Encode::_utf8_off($opts{-A}) if $] >= 5.008;
 
     #Do text formatting here...
     $opts{-X} ||= $self->{_header}->[6] ? 'R' : 'L';
@@ -256,10 +262,14 @@ sub figify{
 	  else{
 	    $line .= $font->[32]->[$i];
 	  }
-	  #XXX
-	  # /o because we can't tr ... is this a problem across objects?
-	  $line =~ s/$self->{_header}->[0]/ /og;
 	}
+
+	eval "use encoding  'utf-8'; use utf8;";
+#	$self->{_header}->[0] = qr/@{[sprintf "\\%o", ord($self->{_header}->[0])]}/;
+
+	#/o because we can't tr
+	#warn "$line =~ s/$self->{_header}->[0]/ /og;\n";
+	$line =~ s/$self->{_header}->[0]/ /og;
 	
 	
 	#Do some more text formatting here... (smushing?)
@@ -273,6 +283,10 @@ sub figify{
 	push @buffer, $line;
       }
     }
+
+    #Properly promote (back) to utf-8
+    eval 'Encode::_utf8_on($_) foreach @buffer' unless $] < 5.006;
+
     return wantarray ? @buffer : join($/, @buffer).$/;
 }
 1;
@@ -508,17 +522,17 @@ See also L<Text::FIGlet/NOTES>
 
 The standard font is 4Mb with no optimizations.
 
-Listed below are increasingly severe means of reducing energy use.
+Listed below are increasingly severe means of reducing memory use.
 
 =over
 
-=item B<-U=E<gt>>-1>
+=item B<-U=E<gt>-1>
 
 This loads Unicode fonts, but skips negative characters. It's the default.
 
 The standard font is 68kb with this optimization.
 
-=item B<-U=E<gt>>0>
+=item B<-U=E<gt>0>
 
 This only loads ASCII characters; plus the Deutsch characters if -D is true.
 
@@ -529,8 +543,16 @@ The standard font is 14kb with this optimization.
 =head1 BUGS
 
 Inclusion of wide characters (UTF8) as glyph fragments,
-as in many TOIlet fonts, will cause premature wrapping.
-A work-around is to pass a B<-w> 2 or 3 times the width needed.
+as in many TOIlet fonts, may cause premature wrapping.
+You should not see this I<if> your perl supports UTF-8 natively,
+I<and> you do not have IO::Uncompress::Unzip installed for zip
+font support; I'm not convinced it's worth sniffing to see
+if the file's uncompressed if you do have the module installed.
+
+A work-around is to pass a B<-w> 3 times the width needed;
+an approximation, since the most likely Unicode characters
+to be used in font are the block elements and line drawing
+characters.
 
 =head1 RESTRICTIONS
 

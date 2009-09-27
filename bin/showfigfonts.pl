@@ -3,7 +3,7 @@ use strict;
 use vars '$VERSION';
 use Text::FIGlet 2.01;
 use File::Find;
-$VERSION = 2.1.2; #2.02
+$VERSION = 2.1.2; #2.11
 
 my %opts;
 $opts{$_} = undef for
@@ -40,7 +40,7 @@ my %figify = (
 $opts{d} ||= $ENV{FIGLIB} || '/usr/games/lib/figlet/';
 my @fonts;
 find(sub {
-	return unless -f && /.flf$/;
+	return unless -f && /.[ft]lf$/;
 	push @fonts, $_;}, $opts{d});
 
 $|++;
@@ -49,7 +49,7 @@ foreach ( sort @fonts ){
 			       -D=>$opts{D}&&!$opts{E},
 			       -d=>$opts{d},
 			       -f=>$_);
-  s/\.flf$//;
+  s/\.[ft]lf$//;
   print "$_ :\n", scalar $font->figify(-A=>$_, -w=>$opts{w}), "\n";
 }
 __END__

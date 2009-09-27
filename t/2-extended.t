@@ -1,13 +1,11 @@
-BEGIN{ exit -1 if $] < 5.006; eval "use Test::Simple tests => 4; use Test::Differences"; }
+BEGIN{ exit -1 if $] < 5.006; eval "use Test::Simple tests => 6; use Test::Differences"; $|=1}
 use Text::FIGlet;
 
 
 #0 implicit -d test
-my $font = Text::FIGlet->new(-d=>'t', -f=>'2', -U=>1);
-
+my $font = Text::FIGlet->new(-d=>'t/', -f=>'2', -U=>1);
 
 #1
-#XX Skip if $] < 5.006;
 my $txt1=<<'UNICODE';
  _\_/_ _ \\//
 |__  /| | \/ 
@@ -20,10 +18,12 @@ eq_or_diff scalar $font->figify(-A=>"\x{17d}\x{13d}", -U=>1), $txt1, "Unicode";
 
 
 #2
-print "#Neg. char mapping currently unvavail. in pre-5.6 perl\n" if $] < 5.006;
-$ctrl = Text::FIGlet->new(-d=>'t', -C=>'2.flc') ||
-  warn("#Failed to load negative character mapping control file: $!\n");
-my $txt2 = <<'-CHAR';
+if( $] < 5.006 ){
+  ok(-1, "SKIPPING negative character mapping in pre-5.6 perl"); }
+else{
+  $ctrl = Text::FIGlet->new(-d=>'t/', -C=>'2.flc') ||
+    warn("#Failed to load negative character mapping control file: $!\n");
+  my $txt2 = <<'-CHAR';
    
    
  o 
@@ -31,17 +31,39 @@ my $txt2 = <<'-CHAR';
 /| 
 \| 
 -CHAR
-eq_or_diff scalar $font->figify(-U=>1, -A=>$ctrl->tr('~')), $txt2, "-CHAR";
+  eq_or_diff scalar $font->figify(-U=>1, -A=>$ctrl->tr('~')), $txt2, "-CHAR";
+}
 
 
-#3
+#3 Clean TOIlet
+$font = Text::FIGlet->new(-d=>'share', -f=>'future');
+my $txt3 = <<'CLEAN';
+┏━┓┏━┓┏━┓┏━╸┏━┓
+┣━┛┣━┫┣━┛┣╸ ┣┳┛
+╹  ╹ ╹╹  ┗━╸╹┗╸
+CLEAN
+eq_or_diff(~~$font->figify(-A=>'Paper'), $txt3, 'Clean TOIlet');
+
+
+#4 Wrapped TOIlet
+#If 3 fails, 4 probably will too
+my $txt4 = <<'WRAP';
+╻ ╻┏━╸╻  ╻  ┏━┓   ╻ ╻┏━┓┏━┓╻  ╺┳┓
+┣━┫┣╸ ┃  ┃  ┃ ┃   ┃╻┃┃ ┃┣┳┛┃   ┃┃
+╹ ╹┗━╸┗━╸┗━╸┗━┛   ┗┻┛┗━┛╹┗╸┗━╸╺┻┛
+WRAP
+my $out = ~~$font->figify(-A=>'Hello World',-w=>240);
+eq_or_diff($out, $txt4, 'TOIlet wrapping');
+
+
+#5&6 Compressed TOIlet
+#If 3 fails, 5&6 probably will too
 eval {$font = Text::FIGlet->new(-d=>'share', -f=>'emboss') };
-$@ ? ok(-1, "SKIPPING Zlib: $@") :
-   ok(ref($font->{_fh}) eq 'IO::Uncompress::Unzip', 'Zlib');
+exists($INC{'IO/Uncompress/Unzip.pm'}) ?
+  ok(ref($font->{_fh}) eq 'IO::Uncompress::Unzip', 'IO::Uncompress:Unzip') :
+  ok(                  -1,     "SKIPPING TOIlet IO::Uncompress:Unzip"); #$@
 
-
-#4
-my $txt4 = <<'TOIlet';
+my $txt6 = <<'TOIlet';
 ┃ ┃┏━┛┃  ┃  ┏━┃
 ┏━┃┏━┛┃  ┃  ┃ ┃
 ┛ ┛━━┛━━┛━━┛━━┛
@@ -49,5 +71,9 @@ my $txt4 = <<'TOIlet';
 ┃┃┃┃ ┃┏┏┛┃  ┃ ┃
 ━━┛━━┛┛ ┛━━┛━━ 
 TOIlet
-$@ ? ok(-1, "SKIPPING TOIlet w/o Zlib") :
-   eq_or_diff(scalar $font->figify(-A=>'Hello World'), $txt4, 'TOIlet');
+exists($INC{'IO/Uncompress/Unzip.pm'}) ?
+  eq_or_diff(scalar $font->figify(-A=>'Hello World'), $txt6, 'TOIlet Zip') :
+  ok(-1, "SKIPPING TOIlet IO::Uncompress:Unzip");
+
+
+#7 XXX Compressed FIGlet

@@ -1,6 +1,20 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
+2.11	Sun Oct 27 19h EST
+	- Updated showfigfonts to also display TOIlet fonts.
+	- Made non-existent font file messages clearer,
+	  IO::Uncompress:Unzip doesn't play well with others.
+	- Added adhesive strip to prevent premature wrapping of glyphs made
+	  with widechars in perls natively supporting UTF-8.
+	- Switched errors to cluck and confess.
+	- More generic handling of file paths (bug #49936); everything is UN*X
+	- Avoid "called too early to check prototype" warning.
+	- Switch back from readline() to waka-waka for 5.005
+	- Remove modern idioms from figlet for 5.005
+	- Return figify returns utf8 string(s) where appropriate,
+	  removing the need for the user to binmode their output channel.
+
 2.10	Wed Jan 21 02:35 EST 2009
 	- Added support for zipped fonts if IO::Uncompress::Unzip is available.
 	- Provisional support for TOIlet fonts
@@ -20,8 +34,8 @@ Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 	- Major speed-up (up to 4x) for loading of sparse fonts.
 
 2.03	Sun Jan  4 21:14 EST 2009
-	- Fix example uses in documentation to include scalar cast
-	- Further updats to Unicode documentation, and verify 5.005 works.
+	- Fix example used in documentation to include scalar cast
+	- Further updates to Unicode documentation, and verify 5.005 works.
 
 2.02	Sun Jan  4 17:19 EST 2009
 	- Rework tests

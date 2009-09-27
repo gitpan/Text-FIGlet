@@ -3,9 +3,7 @@ require 5;
 use strict;
 use vars '$VERSION';
 use Carp 'croak';
-use File::Basename 'fileparse';
-use File::Spec;
-$VERSION = 2.01;
+$VERSION = 2.11;
 
 sub new{
   my $proto = shift;
@@ -16,19 +14,23 @@ sub new{
   my(@t_pre, @t_post);
   while( @_ ){
     my $s = shift;
-    $self->{-d} = shift if $s eq '-d';
-    push(@{$self->{-C}}, shift) if $s eq '-C';
+    if( $s eq '-C' ){
+	push(@{$self->{-C}}, shift); }
+    else{
+	$self->{$s} = shift; }
   }
   $self->{-d} ||= $ENV{FIGLIB}  || '/usr/games/lib/figlet/';
+  $self->{"_\\"} = 1 if $^O =~ /MSWin32|DOS/i;
 
 
 #  my $no = qr/0x[\da-fA-F]+|\d+/;
 
   foreach my $flc ( @{$self->{-C}} ){
-    my($file, $path) = fileparse($flc, '\.flc');
-    $path = $self->{-d} if $path eq './' && index($flc, './') < 0;
-    
-    open(FLC, File::Spec->catfile($path, $file.'.flc')) || croak("$!: $flc");
+    $self->{'_file'} = Text::FIGlet::_canonical($self->{-d},
+						$flc,
+						qr/\.flc/,
+						$self->{"_\\"});
+    open(FLC, $self->{'_file'}) || croak("$!: $flc [$self->{_file}]");
     while(<FLC>){
       next if /^flc2a|\s*#|^\s*$/;
 

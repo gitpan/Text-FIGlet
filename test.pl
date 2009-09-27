@@ -8,13 +8,17 @@ sub ok{
   print( ($_[0] ? '': 'not '), "ok $_[1]\n");
 }
 
+sub like{
+    ok( ($_[0] =~ $_[1]), $_[2]);
+}
+
 foreach my $file ( glob("TEST/*.t") ){
   my $test;
 
   open(TEST, $file) || do{ warn("#Something wrong with $file: $!\n"); next };
   while(<TEST>){
     s/\\x\{(.+?)\}/\@{[Text::FIGlet::UTF8chr(0x\1)]}/g;
-    s%t/%TEST/%;
+    s%t/%TEST/%g;
     $test .= $_ unless /BEGIN|use\s+Test/;
   }
 

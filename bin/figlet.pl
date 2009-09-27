@@ -3,16 +3,16 @@ package main;
 use strict;
 use vars '$VERSION';
 use Text::FIGlet 2.01;
-$VERSION = 2.1.2; #2.02
+$VERSION = 2.1.2; #2.11
 
 my %opts;
 $opts{-C} = [];
 $opts{$_} = undef for
-  qw(A D E L R U X c e h help -help l r x);
+  qw(A D E L R U X c d e f h help -help l r x);
 $opts{$_} = "0 but true" for
-  qw(I d f m w);
+  qw(I m w);
 for (my $i=0; $i <= scalar @ARGV; $i++) {
-  last unless exists($ARGV[$i]);
+  last unless defined($ARGV[$i]);
   shift && last if $ARGV[$i] eq '--';
   if( $ARGV[$i]  =~ /^-N$/ ) {
     shift; $i--;

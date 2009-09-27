@@ -5,10 +5,8 @@ README
 TODO
 bin/charmap.pl
 bin/figlet.pl
-bin/minifig.pl
 bin/showfigfonts.pl
-minifig.PL
-shebang.PL
+bin/minifig.PL
 doc/figfont.txt
 doc/figlet.6
 doc/minifig.txt
@@ -17,6 +15,7 @@ lib/Text/FIGlet/Control.pm
 lib/Text/FIGlet/Font.pm
 lib/Text/FIGlet/LICENSE.pod
 share/emboss.tlf
+share/future.tlf
 share/mini.flf
 share/standard.flf
 share/upper.flc
