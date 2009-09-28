@@ -7,7 +7,7 @@ use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
 use File::Spec;
 use File::Basename 'fileparse';
-$VERSION = 2.11; #Actual code version: 2.11
+$VERSION = 2.12; #Actual code version: 2.12
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;
@@ -110,8 +110,9 @@ sub _canonical{
 
   my($file, $path, $ext) = fileparse($usrfile, $extre);
   $path =~ y/\\/\// if $backslash;
-  $path = $defdir if $path eq './' &&
-    index($usrfile, File::Spec->catfile(File::Spec->curdir, "")) < 0;
+
+  my $curdir = File::Spec->catfile(File::Spec->curdir, "");
+  $path = $defdir if $path eq $curdir && index($usrfile, $curdir) < 0;
   
   return File::Spec->catfile($path, $file.$ext);
 }
