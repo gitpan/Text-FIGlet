@@ -3,29 +3,33 @@ use Test::More tests => 7;
 use Text::FIGlet;
 
 $ENV{FIGLIB} = 'share';
-my $font = Text::FIGlet->new();
 
 #1&2
-#{ Fake windows tests
-  use File::Basename;
-  my($FS, @WASA) = (fileparse_set_fstype('MSWin32'), @File::Spec::ISA);
+{#Fake windows environment
+  my $FS = File::Basename::fileparse_set_fstype('MSWin32');
+  my@WASA=@File::Spec::ISA;
   require "File/Spec/Win32.pm";
   @File::Spec::ISA = ("File::Spec::Win32");
-#}
-#{ Tests
+
+#}Tests {
   eval{ Text::FIGlet->new("_\\"=>1, -C=>'.\foo.flc') };
-  like($@, qr/\[.\\foo.flc\]/, 'Win32 fileparse hack');
+  #wish i could say that everyone was wrong
+  like($@, qr/\[(?:\.\\)?foo.flc\]/,      'Win32 fileparse hack'.$@);
   eval{ Text::FIGlet->new("_\\"=>1, -C=>'\bar\qux.flc') };
   like($@, qr/\[\\bar\\qux.flc\]/,  'Win32 fileparse hack');
-#}
-#{ Return things to normal
-  fileparse_set_fstype($FS);
-  @File::Spec::ISA = @WASA;
 
-#}
+#}Return things to normal {
+  File::Basename::fileparse_set_fstype($FS);
+  @File::Spec::ISA = @WASA;
+}
+
 
 #3
 ok( defined(my $ctrl = Text::FIGlet->new(-C=>'upper.flc')), 'FIGLIB');
+
+
+#...
+my $font = Text::FIGlet->new();
 
 
 #4

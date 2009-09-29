@@ -7,7 +7,7 @@ use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
 use File::Spec;
 use File::Basename 'fileparse';
-$VERSION = 2.12; #Actual code version: 2.12
+$VERSION = 2.13; #Actual code version: 2.12
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;

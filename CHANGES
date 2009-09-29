@@ -1,6 +1,10 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
+2.13    Tue Oct 29 2h EST
+	- Apparently there are some undocumented changes in File::Spec's
+	  behavior since 3.2501, test 1-1 ammended to accomodate this.
+
 2.12	Sun Oct 27 20h EST
 	- Fix _canonical + tests 1-1 & 1-2 to really check Windows paths
 
