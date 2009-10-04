@@ -14,6 +14,7 @@ lib/Text/FIGlet.pm
 lib/Text/FIGlet/Control.pm
 lib/Text/FIGlet/Font.pm
 lib/Text/FIGlet/LICENSE.pod
+lib/Text/FIGlet/Ransom.pm
 share/emboss.tlf
 share/future.tlf
 share/mini.flf

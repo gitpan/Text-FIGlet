@@ -3,7 +3,7 @@ require 5;
 use strict;
 use vars '$VERSION';
 use Carp 'croak';
-$VERSION = 2.11;
+$VERSION = 2.14;
 
 sub new{
   my $proto = shift;
@@ -121,7 +121,7 @@ Note that this is required for perl 5.6 if you are doing negative mapping.
 
 =head1 OPTIONS
 
-C<new>
+=head2 C<new>
 
 =over
 
@@ -155,7 +155,7 @@ returned will be an aggregate of the specified controls.
 
 =back
 
-C<tr>
+=head2 C<tr>
 
 =over
 
@@ -186,12 +186,12 @@ FIGlet control files are available at
 =head1 CAVEATS
 
 There is a mystery bug in perls 5.6.1 and 5.6.2 which can cause seemingly
-transliterations to fail. The standard figlet(1) F<upper.flc> is an example
-of such a transliteration. For this reason, the enclosed F<upper.flc> uses
-a C<freeze> after the ASCII swapping. I've no idea why, but it seems to work.
-If you experience similar problems with other control files, try some shotgun
-debugging with freezes yourself. Modern perls, 5.6.0 and even 5.005_05 do not
-have this problem.
+simple transliterations to fail. The standard figlet(1) F<upper.flc> is an
+example of such a transliteration. For this reason, the enclosed F<upper.flc>
+uses a C<freeze> after the ASCII swapping. I've no idea why, but it seems to
+work. If you experience similar problems with other control files, try some
+shotgun debugging with freezes yourself. Modern perls, 5.6.0 and even 5.005_05
+do not have this problem.
 
 =head1 SEE ALSO
 

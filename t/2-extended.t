@@ -48,9 +48,9 @@ eq_or_diff(~~$font->figify(-A=>'Paper'), $txt3, 'Clean TOIlet');
 #4 Wrapped TOIlet
 #If 3 fails, 4 probably will too
 my $txt4 = <<'WRAP';
-╻ ╻┏━╸╻  ╻  ┏━┓   ╻ ╻┏━┓┏━┓╻  ╺┳┓
-┣━┫┣╸ ┃  ┃  ┃ ┃   ┃╻┃┃ ┃┣┳┛┃   ┃┃
-╹ ╹┗━╸┗━╸┗━╸┗━┛   ┗┻┛┗━┛╹┗╸┗━╸╺┻┛
+╻ ╻┏━╸╻  ╻  ┏━┓    ╻ ╻┏━┓┏━┓╻  ╺┳┓
+┣━┫┣╸ ┃  ┃  ┃ ┃    ┃╻┃┃ ┃┣┳┛┃   ┃┃
+╹ ╹┗━╸┗━╸┗━╸┗━┛    ┗┻┛┗━┛╹┗╸┗━╸╺┻┛
 WRAP
 my $out = ~~$font->figify(-A=>'Hello World',-w=>240);
 eq_or_diff($out, $txt4, 'TOIlet wrapping');

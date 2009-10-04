@@ -14,7 +14,7 @@ $ENV{FIGLIB} = 'share';
 #}Tests {
   eval{ Text::FIGlet->new("_\\"=>1, -C=>'.\foo.flc') };
   #wish i could say that everyone was wrong
-  like($@, qr/\[(?:\.\\)?foo.flc\]/,      'Win32 fileparse hack'.$@);
+  like($@, qr/\[(?:\.\\)?foo.flc\]/,      'Win32 fileparse hack');
   eval{ Text::FIGlet->new("_\\"=>1, -C=>'\bar\qux.flc') };
   like($@, qr/\[\\bar\\qux.flc\]/,  'Win32 fileparse hack');
 

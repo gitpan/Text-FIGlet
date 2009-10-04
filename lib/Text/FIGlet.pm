@@ -7,7 +7,7 @@ use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
 use File::Spec;
 use File::Basename 'fileparse';
-$VERSION = 2.13; #Actual code version: 2.12
+$VERSION = 2.14; #Actual code version: 2.14
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;
@@ -176,12 +176,15 @@ Defaults to F</usr/games/lib/figlet>
 
 =back
 
+F<fontfile> and F<controlfile> can be the (absolute or relative) path to the
+specified file, or simply the name of a file (with or without an extension)
+present in B<-d>.
+
 C<new> with no options will create a font object using the default font.
 
 =head1 EXAMPLES
 
-C<perl -MText::FIGlet -e
-'print Text::FIGlet-E<gt>new()-E<gt>figify(-A=E<gt>"Hello World")'>
+  perl -MText::FIGlet -e 'print ~~Text::FIGlet->new()->figify(-A=>"Hello World")'
 
 To generate headings for webserver directory listings,
 for that warm and fuzzy BBS feeling.
@@ -189,6 +192,31 @@ for that warm and fuzzy BBS feeling.
 Text based clocks or counters at the bottom of web pages.
 
 Anti-bot obfuscation a la L</AUTHOR>.
+
+=head2 Other Things to Try
+
+A variety of interesting effects can be obtained from dot-matrix-like fonts
+such as lean and block by passing them through C<tr>. Hare are some to try:
+
+  tr/|/]/
+  tr[ _/][ ()]
+  tr[ _/][./\\]
+  tr[ _/][ //]
+  tr[ _/][/  ]
+
+If you're using FIGlet as some sort of CAPTCHA, or you'd just like a starry
+background for your text, you might consider adding noise to the results
+of figify e.g;
+
+  #50% chance of replacing a space with an x
+  s/( )/rand()>.5?$1:x/eg
+
+  #50% chance of replacing a space with an entry from @F
+  @F = qw/. x */; s/( )/$F[scalar@F*2*rand()]||$1/eg;
+
+  #5% chance of substituting a random ASCII character
+  #Note that this may yield unpleasant results if UTF is involved
+  s/(.)/rand()<.05?chr(32+rand(94)):$1/eg
 
 =head1 ENVIRONMENT
 

@@ -5,7 +5,7 @@ use vars qw($REwhite $VERSION);
 use Carp qw(cluck confess);
 use Symbol; #5.005 support
 use Text::Wrap;
-$VERSION = 2.11;
+$VERSION = 2.14;
 
 sub new{
   shift();
@@ -23,10 +23,11 @@ sub _load_font{
   local($_);
 
 #MAGIC minifig0
-  $self->{'_file'} = Text::FIGlet::_canonical($self->{-d},
+  $self->{_file} = Text::FIGlet::_canonical($self->{-d},
 					      $self->{-f},
 					      qr/\.[ft]lf/,
 					      $^O =~ /MSWin32|DOS/i);
+  #XXX bsd_glob .[ft]lf
   $self->{_file} = (glob($self->{_file}.'.?lf'))[0] unless -e $self->{_file};
 
 
@@ -52,8 +53,8 @@ sub _load_font{
   #flf2ahardblank height up_ht maxlen smushmode cmt_count rtol
   @header = split(/\s+/, $header);
   $header[0] =~ s/^[ft]lf2.//;
+  #$header[0] = qr/@{[sprintf "\\%o", ord($header[0])]}/;
   $header[0] = quotemeta($header[0]);
-#  $header[0] = qr/@{[sprintf "\\%o", ord($header[0])]}/;
   $self->{_header} = \@header;
 
   unless( exists($self->{-m}) && defined($self->{-m}) && $self->{-m} ne '-2' ){
@@ -217,8 +218,8 @@ sub figify{
 	$opts{-A} = join('', reverse(split('', $opts{-A})));
     }
 
-    $opts{-A} =~ tr/\t/ /;
-    $opts{-A} =~  s%$/%\n%;
+    $opts{-A} =~ y/\t/ /;
+    $opts{-A} =~ s%$/%\n%;
     if( exists($self->{-m}) && $self->{-m} eq '-0' ){
 	$Text::Wrap::columns = int($opts{-w} / $self->{_maxLen})+1;
 	$Text::Wrap::columns =2 if $Text::Wrap::columns < 2;
@@ -264,14 +265,10 @@ sub figify{
 	  }
 	}
 
+	#                            XXX
 	eval "use encoding  'utf-8'; use utf8;";
 #	$self->{_header}->[0] = qr/@{[sprintf "\\%o", ord($self->{_header}->[0])]}/;
 
-	#/o because we can't tr
-	#warn "$line =~ s/$self->{_header}->[0]/ /og;\n";
-	$line =~ s/$self->{_header}->[0]/ /og;
-	
-	
 	#Do some more text formatting here... (smushing?)
 	$opts{-x} ||= $opts{-X} eq 'R' ? 'r' : 'l';
 	if( $opts{-x} eq 'c' ){
@@ -280,6 +277,10 @@ sub figify{
 	if( $opts{-x} eq 'r' ){
 	  $line = " "x($opts{-w}-length($line)) . $line;
 	}
+
+	#Replace hardblanks
+	$line =~ s/$self->{_header}->[0]/ /g;
+	
 	push @buffer, $line;
       }
     }
@@ -325,9 +326,15 @@ with support for Unicode characters in each. See L</CAVEATS> for details.
 
 =head1 OPTIONS
 
-C<new>
+=head2 C<new>
 
 =over
+
+=item B<-d=E<gt>>F<fontdir>
+
+Whence to load files.
+
+Defaults to F</usr/games/lib/figlet>
 
 =item B<-D=E<gt>>I<boolean>
 
@@ -353,6 +360,8 @@ characters with a control file>. See L</CAVEATS> for more details.
 The font to load; defaults to F<standard>.
 
 The fontfile may be zipped if L<IO::Uncompress::Unzip> is available.
+A compressed font should contain only the font itself, and the archive
+should be renamed with the B<flf> extension.
 
 =item B<-m=E<gt>>I<smushmode>
 
@@ -368,7 +377,7 @@ smushmode can be -2 through 63.
 
 =over
 
-=item S<-2>
+=item I<-2>
 
 Get mode from font file (default).
 
@@ -376,13 +385,13 @@ Every FIGlet font file specifies the best smushmode to use with the font.
 This will be one of the smushmodes (-1 through 63) described in the following
 paragraphs.
 
-=item S<-1>
+=item I<-1>
 
 No smushing or kerning.
 
 Characters are simply concatenated together.
 
-=item S<-0>
+=item I<-0>
 
 Fixed width.
 
@@ -390,7 +399,7 @@ This will pad each character in the font such that they are all a consistent
 width. The padding is done such that the character is centered in it's "cell",
 and any odd padding is the trailing edge.
 
-=item S<0>
+=item I<0>
 
 Kern only.
 
@@ -400,7 +409,7 @@ Characters are pushed together until they touch.
 
 =back
 
-C<figify>
+=head2 C<figify>
 
 Returns a a string or list of lines, depending on context.
 

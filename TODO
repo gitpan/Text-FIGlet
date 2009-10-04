@@ -49,7 +49,7 @@ REFACTOR
 
 		 2nd array(code complexity?)?
 
-	char =[] can get blank chars to not be ref's?!
+!!!	char =[] can get blank chars to not be ref's?!
 
 	detect if glyph has been seen before, and reference it?
 	       potential over-smushification problem
@@ -68,21 +68,21 @@ REFACTOR
 	use header[3] as initial approximation of char width,
 	to help nix up-to 0x7e heuristic
 
+	header	http://www.jave.de/figlet/figfont.html#headerline
+		 -2 = full layout
+		 -1 = figchar count!! optimize file parser with this?
+
 FEATURES
 	- smushing (-m=1|2|4|8|16|32)
+
 	  TOIlet -o/verlap mode? (partial lamination of each FIGchar)
           Would have to know what chars are "inside" the top letter for opacity
-	- "Vertical Fitting"?
 
-	- Text::FIGlet::Mixed, for creating the anti-spambot style text
-		- mixed({
-			-f=>Text::FIGlet->new, #Font Object
-			-A=>'H',               #Input
-			pre=> CODREF,          #Control object, etc.
-			post=>CODEREF,         #eg; y/x/*/
-			} ... );
-	- add noise for "captcha"
+	- "Vertical Fitting", indicated by header[-2] above
 
 	- controls; h j b g
 		- isn't u enough?
-	- other scripts: chkfont
+
+	- other scripts: chkfont--
+
+        - QOTW19 "OCR"?
