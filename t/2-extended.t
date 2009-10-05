@@ -48,9 +48,9 @@ eq_or_diff(~~$font->figify(-A=>'Paper'), $txt3, 'Clean TOIlet');
 #4 Wrapped TOIlet
 #If 3 fails, 4 probably will too
 my $txt4 = <<'WRAP';
-╻ ╻┏━╸╻  ╻  ┏━┓    ╻ ╻┏━┓┏━┓╻  ╺┳┓
-┣━┫┣╸ ┃  ┃  ┃ ┃    ┃╻┃┃ ┃┣┳┛┃   ┃┃
-╹ ╹┗━╸┗━╸┗━╸┗━┛    ┗┻┛┗━┛╹┗╸┗━╸╺┻┛
+╻ ╻┏━╸╻  ╻  ┏━┓   ╻ ╻┏━┓┏━┓╻  ╺┳┓
+┣━┫┣╸ ┃  ┃  ┃ ┃   ┃╻┃┃ ┃┣┳┛┃   ┃┃
+╹ ╹┗━╸┗━╸┗━╸┗━┛   ┗┻┛┗━┛╹┗╸┗━╸╺┻┛
 WRAP
 my $out = ~~$font->figify(-A=>'Hello World',-w=>240);
 eq_or_diff($out, $txt4, 'TOIlet wrapping');
@@ -61,19 +61,16 @@ eq_or_diff($out, $txt4, 'TOIlet wrapping');
 eval {$font = Text::FIGlet->new(-d=>'share', -f=>'emboss') };
 exists($INC{'IO/Uncompress/Unzip.pm'}) ?
   ok(ref($font->{_fh}) eq 'IO::Uncompress::Unzip', 'IO::Uncompress:Unzip') :
-  ok(                  -1,     "SKIPPING TOIlet IO::Uncompress:Unzip"); #$@
+  ok(                  -1,     "SKIPPING IO::Uncompress:Unzip"); #$@
 
 my $txt6 = <<'TOIlet';
-┃ ┃┏━┛┃  ┃  ┏━┃
-┏━┃┏━┛┃  ┃  ┃ ┃
-┛ ┛━━┛━━┛━━┛━━┛
-┃┃┃┏━┃┏━┃┃  ┏━ 
-┃┃┃┃ ┃┏┏┛┃  ┃ ┃
-━━┛━━┛┛ ┛━━┛━━ 
+┃ ┃┏━┛┃  ┃  ┏━┃  ┃┃┃┏━┃┏━┃┃  ┏━ 
+┏━┃┏━┛┃  ┃  ┃ ┃  ┃┃┃┃ ┃┏┏┛┃  ┃ ┃
+┛ ┛━━┛━━┛━━┛━━┛  ━━┛━━┛┛ ┛━━┛━━ 
 TOIlet
 exists($INC{'IO/Uncompress/Unzip.pm'}) ?
   eq_or_diff(scalar $font->figify(-A=>'Hello World'), $txt6, 'TOIlet Zip') :
-  ok(-1, "SKIPPING TOIlet IO::Uncompress:Unzip");
+  ok(-1, "SKIPPING IO::Uncompress:Unzip");
 
 
 #7 XXX Compressed FIGlet

@@ -1,49 +1,50 @@
-package Text::FIGlet;
-require 5;
-use constant PRIVb => 0xF0000; #Map negative characters into Unicode's
-use constant PRIVe => 0xFFFFD; #Private area
+package Text::FIGlet;          #~50us penalty w/ 2 constant calls for 5.005
+use constant PRIVb => 0xF0000; #Map neg chars into Unicode's private area
+use constant PRIVe => 0xFFFFD; #0-31 are also available but unused.
 use strict;
 use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
 use File::Spec;
 use File::Basename 'fileparse';
-$VERSION = 2.14; #Actual code version: 2.14
+$VERSION = 2.16; #Actual code version: 2.16
 
 use Text::FIGlet::Font;
 use Text::FIGlet::Control;
+use Text::FIGlet::Ransom;
 
 $] >= 5.008 ? eval "use Encode;" : eval "sub Encode::_utf8_off {};";
 %RE = (
-       UTFchar => qr/([\xC0-\xDF].|[\xE0-\xEF]..|[\xF0-\xFF]...|.)/,
-       bytechar=> qr/(.)/,
+       UTFchar => qr/([\xC0-\xDF].|[\xE0-\xEF]..|[\xF0-\xFF]...|.)/s,
+       bytechar=> qr/(.)/s,
        no      => qr/(-?)((0?)(?:x[\da-fA-F]+|\d+))/,
        );
 
 sub import{
-  @_ = qw/UTF8chr UTF8ord/ if grep(/:Encode/, @_);
+  @_ = qw/UTF8chr UTF8ord UTF8len/ if grep(/:Encode/, @_);
 
   if( @_ ) {
     no strict 'refs';
-    *{scalar(caller).'::'.$_} = $_ for grep/UTF8chr|UTF8ord/, @_;
+    *{scalar(caller).'::'.$_} = $_ for grep/UTF8chr|UTF8ord|UTF8len/, @_;
   }
 }
 
 sub new {
   local $_;
   my $proto = shift;
+  my %opt = @_;
   my($class, @isect, %count);
-  my %class = (
-	       -f => 'Font',
-	       -C => 'Control'
-	       );
+  my %class = (-f => 'Font', -C => 'Control');
 
-  $count{$_}++ for (keys %{ {@_} }, keys %class);
-  $count{$_} == 2 && push(@isect, $_) for keys %count;
-  
-  croak("Cannot new both -C and -f") if scalar @isect > 1;
 
-  $class = shift(@isect) || '-f';
-  $class = 'Text::FIGlet::' . $class{$class};
+  if( ref($opt{-f}) =~ /ARRAY|HASH/ ){
+      $class = 'Text::FIGlet::Ransom';
+  }
+  else{
+      $count{$_}++ for (keys %opt, keys %class);
+      $count{$_} == 2 && push(@isect, $_) for keys %count;
+      croak("Cannot new both -C and -f") if scalar @isect > 1;
+      $class = 'Text::FIGlet::' . $class{shift(@isect) || '-f'};
+  }
   $class->new(@_);
 }
 
@@ -62,22 +63,6 @@ sub _no{
   $val;
 }
 
-sub UTF8ord{
-  my $str = shift || $_;
-  my $len = length ($str);
-
-  return ord($str) if $len == 1;
-  #This is a FIGlet specific error value
-  return 128       if $len > 4 || $len == 0;
-
-  my @n = unpack "C*", $str;
-  $str  = (($n[-2] & 0x3f) <<  6) + ($n[-1] & 0x3f);
-  $str += (($n[-3] & 0x1f) << 12) if $len ==3;
-  $str += (($n[-3] & 0x3f) << 12) if $len ==4;
-  $str += (($n[-4] & 0x0f) << 18) if $len == 4;
-  return $str;
-}
-
 sub UTF8chr{
   my $ord = shift || $_;
   my @n;
@@ -87,22 +72,45 @@ sub UTF8chr{
     @n = $ord; }
   #x80-x7ff       #2 bytes
   elsif( $ord < 0x800 ){
-    @n  = (0xc0|$ord>>6, 0x80|$ord&0x3f ); }
+    @n  = (0xc0|$ord>>6, 0x80|$ord&0x3F ); }
   #x800-xffff     #3 bytes
   elsif( $ord < 0x10000 ){
     @n  = (0xe0|$ord>>12, 
-	   0x80|($ord>>6)&0x3f,
-	   0x80|$ord&0x3f ); }
+	   0x80|($ord>>6)&0x3F,
+	   0x80|$ord&0x3F ); }
   #x10000-x10ffff #4 bytes
   elsif( $ord<0x20000 ){
     @n = (0xf0|$ord>>18,
-	  0x80|($ord>>12)&0x3f,
-	  0x80|($ord>>6)&0x3f,
-	  0x80|$ord&0x3f); }
+	  0x80|($ord>>12)&0x3F,
+	  0x80|($ord>>6)&0x3F,
+	  0x80|$ord&0x3F); }
   else{
     warn "Out of range for UTF-8: $ord"; }
 
   return pack "C*", @n;
+}
+
+sub UTF8len{
+  my $str = shift || $_;
+  my $thByte = qr/[\x80-\xBF]/;
+  #XXX Should perhaps put 1 byte UTF-8 last, as . instead, to catch ANSI-fonts?
+  my $count = () = $str =~ m/([\x00-\x7F]|[\xC2-\xDF]$thByte|[\xE0-\xEF]$thByte{2}|[\xF0-\xF4]$thByte{3})/g;
+}
+
+sub UTF8ord{
+  my $str = shift || $_;
+  my $len = length ($str);
+
+  return ord($str) if $len == 1;
+  #This is a FIGlet specific error value
+  return 128       if $len > 4 || $len == 0;
+
+  my @n = unpack "C*", $str;
+  $str  = (($n[-2] & 0x3F) <<  6) + ($n[-1] & 0x3F);
+  $str += (($n[-3] & 0x1F) << 12) if $len ==3;
+  $str += (($n[-3] & 0x3F) << 12) if $len ==4;
+  $str += (($n[-4] & 0x0F) << 18) if $len == 4;
+  return $str;
 }
 
 sub _canonical{
@@ -268,8 +276,9 @@ If you are using perl 5.005 and wish to try to acces Unicode characters
 programatically, or are frustrated by perl 5.6's Unicode support, you may
 try importing C<UTF8chr> from this module.
 
-This module also offers C<UTF8ord>, which is used internally, but may be
-of general use. To import both functions, use the B<:Encode> import tag.
+This module also offers C<UTF8ord> and C<UTF8len>, which are used internally,
+but may be of general use. To import all three functions, use the B<:Encode>
+import tag.
 
 =head1 AUTHOR
 

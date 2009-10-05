@@ -1,5 +1,8 @@
 use ExtUtils::MakeMaker;
 
+#To bypass make test: t/*.t for perl 5.005
+rename('t', 'TEST') if $] < 5.006;
+
 WriteMakefile(
 	      NAME	   => 'Text::FIGlet',
 	      VERSION_FROM => 'lib/Text/FIGlet.pm',
@@ -8,6 +11,3 @@ WriteMakefile(
 	      ($] < 5.006 ? () :#Test dependency bypass
 	       (PREREQ_PM    =>{'Test::Differences' => undef})),
 	     );
-
-#To bypass make test: t/*.t for perl 5.005
-rename('t', 'TEST') if $] < 5.006;

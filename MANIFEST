@@ -25,5 +25,6 @@ t/1-basic.t
 t/2-extended.t
 t/2.flc
 t/2.flf
+t/3-ransom.t
 test.pl
 META.yml                                 Module meta-data (added by MakeMaker)

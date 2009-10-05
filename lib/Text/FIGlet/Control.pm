@@ -3,7 +3,13 @@ require 5;
 use strict;
 use vars '$VERSION';
 use Carp 'croak';
-$VERSION = 2.14;
+$VERSION = 2.15;
+
+#'import' core support functions from parent with circular dependency
+foreach( qw/_canonical _no/){
+  no strict 'refs';
+  *$_ = *{'Text::FIGlet::'.$_};
+}
 
 sub new{
   my $proto = shift;
@@ -26,7 +32,7 @@ sub new{
 #  my $no = qr/0x[\da-fA-F]+|\d+/;
 
   foreach my $flc ( @{$self->{-C}} ){
-    $self->{'_file'} = Text::FIGlet::_canonical($self->{-d},
+    $self->{'_file'} = _canonical($self->{-d},
 						$flc,
 						qr/\.flc/,
 						$self->{"_\\"});
@@ -40,14 +46,14 @@ sub new{
       if( /^\s*$Text::FIGlet::RE{no}\s+$Text::FIGlet::RE{no}\s*/ ){
 	#Only needed for decimals?!
 
-	push @t_pre,  sprintf('\\x{%x}', Text::FIGlet::_no($1, $2, $3));
-	push @t_post, sprintf('\\x{%x}', Text::FIGlet::_no($4, $5, $6));
+	push @t_pre,  sprintf('\\x{%x}', _no($1, $2, $3));
+	push @t_post, sprintf('\\x{%x}', _no($4, $5, $6));
       }
       elsif( /^\s*t\s+\\?$Text::FIGlet::RE{no}(?:-\\$Text::FIGlet::RE{no})?\s+\\?$Text::FIGlet::RE{no}(?:-\\$Text::FIGlet::RE{no})?\s*/ ){
-	push @t_pre,  sprintf( '\\x{%x}', Text::FIGlet::_no( $1, $2, $3));
-	push @t_post, sprintf( '\\x{%x}', Text::FIGlet::_no( $7, $8, $9));
-	$t_pre[-1] .= sprintf('-\\x{%x}', Text::FIGlet::_no( $4, $5, $6)) if$5;
-	$t_post[-1].= sprintf('-\\x{%x}', Text::FIGlet::_no($10,$11,$12))if$11;
+	push @t_pre,  sprintf( '\\x{%x}', _no( $1, $2, $3));
+	push @t_post, sprintf( '\\x{%x}', _no( $7, $8, $9));
+	$t_pre[-1] .= sprintf('-\\x{%x}', _no( $4, $5, $6)) if$5;
+	$t_post[-1].= sprintf('-\\x{%x}', _no($10,$11,$12))if$11;
       }
       elsif( /^\s*t\s+([^\s](?:-[^\s])?)\s+([^\s](?:-[^\s])?)\s*/ ){
 	push @t_pre,  $1;

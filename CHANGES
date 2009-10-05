@@ -1,6 +1,21 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
+2.16	Mon Oct 05 03h EST 2009
+	- Fixed bug introduced way back in 1.07, that caused newlines in -A
+	  to be ignored, and added a test to catch future breakage.
+	- Fixed -v which broke when I created own sum() for 5.005
+	- Minor performance tweaks
+
+2.15	Sun Oct 04 19h EST 2009, forgot to hit submit on PAUSE
+	- Fixed long-standing oddity of extra whitespace in module -m=-1 output
+ 	  vs. figlet(6) -W output due to off by one calculation error of widths
+	- Added -v support to Ransom
+	- Added Ransom support to base class
+	- Fixed premature wrapping due to the use of wide chars in glyphs.
+	- Re-placed rename(t/) in Makefile.PL to top so that tests work in
+	  5.005 w/o manual fussing; was moved to please "make distclean"
+
 2.14	Sat Oct 03 21h EST 2009
 	- Remove extraneous debug info from test 1-1
 	- Fixed hardblank bug resulting from unfortunate use of /o

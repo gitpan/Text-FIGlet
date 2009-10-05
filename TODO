@@ -1,10 +1,4 @@
 FIX
-	wide character warnings in figlet/minifig/charmap if native
-	     support hack for proper wrapping
-
-	premature wrapping of widechar glyph fragments...
-	     relatively simple in modern perl, but not older
-
 ?	charmap for widechar/TOIlet fonts
 
 ??	TOIlet permits widechars as EOL!
@@ -34,11 +28,9 @@ REFACTOR
 	Switch to ::AnyInflate?
 
 	Benchmark
-		$font alias again
-
-		1.07 vs. 1.06
-
 		dprof
+
+		$font alias again
 
         Negative Char performance
 		 Pre-allocating length halves size of array,
@@ -49,8 +41,6 @@ REFACTOR
 
 		 2nd array(code complexity?)?
 
-!!!	char =[] can get blank chars to not be ref's?!
-
 	detect if glyph has been seen before, and reference it?
 	       potential over-smushification problem
 
@@ -60,13 +50,13 @@ REFACTOR
         Native UTF8 in 5.8+?
 
 	-m=-0
-	a) keep current hack on hack
-	b) use header width
+		a) keep current hack on hack
+		b) use header width
 
-	may break, depending on Text::Wrap?
+		may break, depending on Text::Wrap?
 
-	use header[3] as initial approximation of char width,
-	to help nix up-to 0x7e heuristic
+		use header[3] as initial approximation of char width,
+		to help nix up-to 0x7e heuristic
 
 	header	http://www.jave.de/figlet/figfont.html#headerline
 		 -2 = full layout
@@ -80,9 +70,11 @@ FEATURES
 
 	- "Vertical Fitting", indicated by header[-2] above
 
+	- Unicode ransom
+
+        - QOTW19 "OCR"?
+
 	- controls; h j b g
 		- isn't u enough?
 
 	- other scripts: chkfont--
-
-        - QOTW19 "OCR"?

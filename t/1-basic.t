@@ -1,5 +1,5 @@
 BEGIN{ exit -1 if $] < 5.006; eval "use Test::Differences";}
-use Test::More tests => 7;
+use Test::More tests => 8;
 use Text::FIGlet;
 
 $ENV{FIGLIB} = 'share';
@@ -77,3 +77,21 @@ my $txt5 = <<'R2L';
                                                                 |___/           
 R2L
 eq_or_diff scalar $font->figify(-A=>'Right to left',-X=>'R'), $txt5, "R2L";
+
+
+#8
+my $txt6 = <<'NEWLINE';
+ _   _                  _  _              
+| \ | |  ___ __      __| |(_) _ __    ___ 
+|  \| | / _ \\ \ /\ / /| || || '_ \  / _ \
+| |\  ||  __/ \ V  V / | || || | | ||  __/
+|_| \_| \___|  \_/\_/  |_||_||_| |_| \___|
+                                          
+ _                       
+| |__    ___  _ __   ___ 
+| '_ \  / _ \| '__| / _ \
+| | | ||  __/| |   |  __/
+|_| |_| \___||_|    \___|
+                         
+NEWLINE
+eq_or_diff scalar $font->figify(-A=>"Newline\nhere"), $txt6, "-A=>\\n";

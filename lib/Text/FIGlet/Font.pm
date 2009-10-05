@@ -5,7 +5,13 @@ use vars qw($REwhite $VERSION);
 use Carp qw(cluck confess);
 use Symbol; #5.005 support
 use Text::Wrap;
-$VERSION = 2.14;
+$VERSION = 2.16;
+
+#'import' core support functions from parent with circular dependency
+foreach( qw/UTF8len UTF8ord _canonical _no/){
+    no strict 'refs';
+    *$_ = *{'Text::FIGlet::'.$_};
+}
 
 sub new{
   shift();
@@ -23,10 +29,8 @@ sub _load_font{
   local($_);
 
 #MAGIC minifig0
-  $self->{_file} = Text::FIGlet::_canonical($self->{-d},
-					      $self->{-f},
-					      qr/\.[ft]lf/,
-					      $^O =~ /MSWin32|DOS/i);
+  $self->{_file} = _canonical($self->{-d}, $self->{-f}, qr/\.[ft]lf/,
+			      $^O =~ /MSWin32|DOS/i);
   #XXX bsd_glob .[ft]lf
   $self->{_file} = (glob($self->{_file}.'.?lf'))[0] unless -e $self->{_file};
 
@@ -93,7 +97,7 @@ sub _load_font{
 
     /^\s*$Text::FIGlet::RE{no}/;
     last unless $2;
-    my $val = Text::FIGlet::_no($1, $2, $3, 1);
+    my $val = _no($1, $2, $3, 1);
 
     #Bypass negative chars?
     if( $val > Text::FIGlet::PRIVb && $self->{-U} == -1 ){
@@ -173,7 +177,8 @@ sub _load_char{
       /(.)\s*$/;
       $end = $1;
 #XXX  $REtrail = qr/([ $self->{_header}->[0]]+)$end{1,2}\s*$/;
-      $REtrail = qr/([ $self->{_header}->[0]]+)\Q$end$end\E?\s*$/;
+      #The negative leading anchor is for term 0x40
+      $REtrail = qr/(?<!^)([ $self->{_header}->[0]]+)\Q$end$end\E?\s*$/;
     }
     if( $wLead && s/^(\s+)// ){
       $wLead  = $l if ($l = length($1)) < $wLead;
@@ -187,7 +192,10 @@ sub _load_char{
     else{
       $wTrail = 0;
     }
-    $length = $l if ($l = length($_)-1-(s/\Q$end\E+$/$end/mog)) > $length;
+    #                                \n  end marker strip     & count
+    #$length = $l if ($l = length($_) -1 -(s/(\Q$end\E+)$/$end/&&length($1))) > $length;
+    $length = $l if ($l =                    UTF8len($_) -1
+		     -(s/(\Q$end\E+)$/$end/&&UTF8len($1))  ) > $length;
     $font->[$i] .= $line;
   }
   #XXX :-/ stop trying at 125 in case of map in ~ or extended....
@@ -196,9 +204,9 @@ sub _load_char{
   #Ideally this would be /o but then all figchar's must have same EOL
   $font->[$i] =~ s/\Q$end\E|\015//g;
   $font->[$i] = [$length,#maxLen
-			  $wLead, #wLead
-			  $wTrail,#wTrail
-			  split(/\r|\r?\n/, $font->[$i])];
+		 $wLead, #wLead
+		 $wTrail,#wTrail
+		 split(/\r|\r?\n/, $font->[$i])];
   return 1;
 }
 
@@ -219,7 +227,7 @@ sub figify{
     }
 
     $opts{-A} =~ y/\t/ /;
-    $opts{-A} =~ s%$/%\n%;
+    $opts{-A} =~ s%$/%\n% unless $/ eq "\n";
     if( exists($self->{-m}) && $self->{-m} eq '-0' ){
 	$Text::Wrap::columns = int($opts{-w} / $self->{_maxLen})+1;
 	$Text::Wrap::columns =2 if $Text::Wrap::columns < 2;
@@ -235,8 +243,8 @@ sub figify{
 		 /$Text::FIGlet::RE{UTFchar}/g :
 		 /$Text::FIGlet::RE{bytechar}/g ){
 	    $opts{-A} .= "\0"x(($font->[
-					$opts{-U} ? Text::FIGlet::UTF8ord($1) : ord($1)
-				       ]->[0]||1)-1) . $1
+					$opts{-U} ? UTF8ord($1) : ord($1)
+				]->[0]||1)-1) . $1;
 	  }
 	}
 	#XXX pre 5.8 Text::Wrap is not Unicode happy?
@@ -251,10 +259,10 @@ sub figify{
       while( $opts{-U} ?
 	     /$Text::FIGlet::RE{UTFchar}/g :
 	     /$Text::FIGlet::RE{bytechar}/g ){
-	push @lchars, ($opts{-U} ? Text::FIGlet::UTF8ord($1) : ord($1));
+	push @lchars, ($opts{-U} ? UTF8ord($1) : ord($1));
       }
 
-      foreach my $i (3..$self->{_header}->[1]+2){
+      foreach my $i (-$self->{_header}->[1]..-1){
 	my $line='';
 	foreach my $lchar (@lchars){
 	  if( $font->[$lchar] ){
@@ -265,9 +273,8 @@ sub figify{
 	  }
 	}
 
-	#                            XXX
-	eval "use encoding  'utf-8'; use utf8;";
-#	$self->{_header}->[0] = qr/@{[sprintf "\\%o", ord($self->{_header}->[0])]}/;
+	eval "use encoding  'utf-8'"; #XXX use utf8;
+	#$self->{_header}->[0] = qr/@{[sprintf "\\%o", ord($self->{_header}->[0])]}/;
 
 	#Do some more text formatting here... (smushing?)
 	$opts{-x} ||= $opts{-X} eq 'R' ? 'r' : 'l';
@@ -286,9 +293,10 @@ sub figify{
     }
 
     #Properly promote (back) to utf-8
-    eval 'Encode::_utf8_on($_) foreach @buffer' unless $] < 5.006;
+    return wantarray ? map{Encode::_utf8_on($_)} @buffer : Encode::_utf8_on($_=join($/, @buffer).$/),$_ unless $] < 5.006;
 
     return wantarray ? @buffer : join($/, @buffer).$/;
+
 }
 1;
 __END__
@@ -548,20 +556,6 @@ This only loads ASCII characters; plus the Deutsch characters if -D is true.
 The standard font is 14kb with this optimization.
 
 =back
-
-=head1 BUGS
-
-Inclusion of wide characters (UTF8) as glyph fragments,
-as in many TOIlet fonts, may cause premature wrapping.
-You should not see this I<if> your perl supports UTF-8 natively,
-I<and> you do not have IO::Uncompress::Unzip installed for zip
-font support; I'm not convinced it's worth sniffing to see
-if the file's uncompressed if you do have the module installed.
-
-A work-around is to pass a B<-w> 3 times the width needed;
-an approximation, since the most likely Unicode characters
-to be used in font are the block elements and line drawing
-characters.
 
 =head1 RESTRICTIONS
 
