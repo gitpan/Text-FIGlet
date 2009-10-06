@@ -5,7 +5,7 @@ use vars qw($REwhite $VERSION);
 use Carp qw(cluck confess);
 use Symbol; #5.005 support
 use Text::Wrap;
-$VERSION = 2.16;
+$VERSION = 2.17;
 
 #'import' core support functions from parent with circular dependency
 foreach( qw/UTF8len UTF8ord _canonical _no/){
@@ -254,7 +254,7 @@ sub figify{
 
     foreach( split("\n", $opts{-A}) ){
       my @lchars;
-      s/^\s*//o;
+      s/^\s*//o; #XXX
 #      push(@lchars, ord $1) while /(.)/g;
       while( $opts{-U} ?
 	     /$Text::FIGlet::RE{UTFchar}/g :
@@ -532,6 +532,11 @@ It understands "literal Unicode characters" (UTF-8 sequences), and will
 emit the correct output if the loaded font supports it. It does not
 support negative character mapping at this time.
 See also L<Text::FIGlet/NOTES>
+
+=item Negative character codes
+
+There is limited support for negative character codes,
+at this time only characters -2 through -65_535 are supported.
 
 =back
 

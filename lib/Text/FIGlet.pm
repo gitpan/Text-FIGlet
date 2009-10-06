@@ -6,13 +6,25 @@ use vars qw'$VERSION %RE';
 use Carp qw(carp croak);
 use File::Spec;
 use File::Basename 'fileparse';
-$VERSION = 2.16; #Actual code version: 2.16
+$VERSION = 2.17; #Actual code version: 2.17
 
-use Text::FIGlet::Font;
 use Text::FIGlet::Control;
+use Text::FIGlet::Font;
 use Text::FIGlet::Ransom;
 
-$] >= 5.008 ? eval "use Encode;" : eval "sub Encode::_utf8_off {};";
+if( $] >= 5.008 ){
+    eval "use Encode";
+}
+#From Encode::compat, but lower from 5.006001 to 5.006
+elsif ($] >= 5.006 and $] <= 5.007) {
+    package Encode;
+    sub _utf8_on  { $_[0] = pack('U*', unpack('U0U*', $_[0])) }
+    sub _utf8_off { $_[0] = pack('C*', unpack('C*',   $_[0])) }
+}
+else{
+    eval "sub Encode::_utf8_off{}; sub Encode::_utf8_on{}";
+}
+
 %RE = (
        UTFchar => qr/([\xC0-\xDF].|[\xE0-\xEF]..|[\xF0-\xFF]...|.)/s,
        bytechar=> qr/(.)/s,
@@ -166,15 +178,13 @@ C<new>
 
 =item B<-C=E<gt>>F<controlfile>
 
-Creates a control object.
-L<Text::File::Control> for control object specific options to new,
-and how to use the object.
+Creates a control object. L<Text::File::Control> for control object specific
+options to new, and how to use the object.
 
 =item B<-f=E<gt>>F<fontfile>
 
-Creates a font object.
-L<Text::File::Font> for font object specific options to new,
-and how to use the object.
+Creates a font object. L<Text::File::Font> for font object specific options
+to new, and how to use the object.
 
 =item B<-d=E<gt>>F<fontdir>
 
@@ -234,8 +244,7 @@ B<Text::FIGlet> will make use of these environment variables if present
 
 =item FIGFONT
 
-The default font to load.
-If undefined the default is F<standard.flf>.
+The default font to load. If undefined the default is F<standard.flf>.
 It should reside in the directory specified by FIGLIB.
 
 =item FIGLIB
@@ -253,22 +262,11 @@ FIGlet font files and control files are available at
  
 =head1 SEE ALSO
 
-L<figlet(6)>, L<http://www.figlet.org|http://www.figlet.org>
+Module architecture: L<http://pthbb.org/manual/software/perl/T-F/>
 
-L<banner(6)>, L<Text::Banner>
+Animated FIGlet: L<Acme::Curses::Marquee::Extensions>
 
-L<Acme::Curses::Marquee::Extensions>, L<http://pthbb.org/ocular/text-art/>
-
-=head1 CAVEATS
-
-=over
-
-=item Negative character codes
-
-There is limited support for negative character codes,
-at this time only characters -2 through -65_535 are supported.
-
-=back
+Ancestors: L<figlet(6)> L<http://www.figlet.org>, L<banner(6)>, L<Text::Banner>
 
 =head1 NOTES
 

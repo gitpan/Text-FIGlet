@@ -3,33 +3,33 @@ require 5;
 use strict;
 use vars qw/$VERSION @ISA/;
 use Carp 'croak';
-$VERSION = 2.16;
+$VERSION = 2.17;
 @ISA = 'Text::FIGlet::Font';
 
 #Roll our own for 5.005, and remove somewhat heavy List::Util dependency
 sub max{ (sort @_)[-1]; }
-#sub sum{ my $cnt; $cnt += $_ foreach @_; return $cnt}
+sub sum{ my $cnt; $cnt += $_ foreach @_; return $cnt}
 
 sub new{
   shift();
-  my $self = {-U=>0, -v=>'center', @_};
-  my(@fonts, %fonts, @names);
+  my $self = {-U=>0, -v=>'center', -m=>-1, @_};
+  my(@fonts, %fonts);
 
 
   if( ref($self->{-f}) eq 'HASH' ){
     croak "No default specified" unless defined($self->{-f}->{undef});
     croak "Insufficient number of fonts, 2 or more please" unless keys(%{$self->{-f}}) > 1;
-    @names = (delete($self->{-f}->{undef}), keys %{$self->{-f}});
+    $self->{_fonts} = [delete($self->{-f}->{undef}), keys %{$self->{-f}}];
   }
   else{
     croak "Insufficient number of fonts, 2 or more please" unless scalar(@{$self->{-f}}) > 1;
-    @names = @{$self->{-f}};
+    $self->{_fonts} = $self->{-f};
   }
 
 
   #Load the fonts
   my $x =0;
-  foreach my $font ( @names ){
+  foreach my $font ( @{$self->{_fonts}} ){
       push(@fonts, Text::FIGlet::Font->new(%$self, -f=>$font));
       $fonts{$font} = $x++;
   }
@@ -69,13 +69,12 @@ sub new{
 	}
       }
       $c = $fonts[$R=0]->{_font}->[$i] unless $c;
-      #printf("%s - %s\n", chr($i), $names[$R]||undef);
     }
     else{
       $R = rand(scalar(@fonts));
       $c = $fonts[$R]->{_font}->[$i];
+      $self->{_map}->[$R] .= chr($i);
     }
-
 
     #Vertical-alignment & padding
     if( my $delta = $self->{_header}->[1] - $fonts[$R]->{_header}->[1] ){
@@ -83,8 +82,8 @@ sub new{
       local($self->{-v}) = (qw/top center center bottom/)[rand(4)]
 	if $self->{-v} eq 'random';
 
-      #my $ws = sum(@$c[0,1,2]);
-      my $ws = $c->[0];
+
+      my $ws = $self->{-m} == 0 ? $c->[0] : sum(@$c[0,1,2]);
       if( $self->{-v} eq 'top' ){
 	push(@$c, (' 'x$ws)x$delta);
       }
@@ -112,12 +111,46 @@ sub new{
     my $iHard=$fonts[$R]->{_header}->[0];
     foreach my $j(-$self->{_header}->[1]..-1){
       $c->[$j]=~ s/$iHard/\177/g;
+      #$c->[$j].= Text::FIGlet::UTF8len($c->[$j]);
     }
 
     $self->{_font}->[$i] = $c;
   }
 
   bless($self);
+}
+
+sub freeze{
+    my $self = shift;
+    my $comments;
+
+    foreach my $opt ( sort grep {/^-/} keys %{$self} ){
+	my $val = $self->{$opt};
+	if( ref($val) eq 'ARRAY' ){
+	    $val = '[qw/'. join(' ', @$val) . '/]';
+	    if( $opt eq '-f' ){
+		for(my $f=0; $f< scalar @{$self->{_map}}; $f++ ){
+		    $val .= "\n#\tfont$f $self->{_map}->[$f]";
+		    $self->{_header}->[5]++;
+		}
+	    }
+	}
+	elsif( ref($val) eq 'HASH' ){
+	    $val = '{undef,'. $self->{_fonts}->[0] .','. join(',',%{$val}) .'}';
+	}
+	$comments .= sprintf "#%s => %s\n", $opt, $val;
+	$self->{_header}->[5]++;
+    }
+
+    printf "flf2a%s %s %s %s %s %s %s\n", @{$self->{_header}};
+    print $comments;
+
+    for(my $i=32; $i<= scalar @{$self->{_font}}; $i++ ){
+	my $c = $self->{_font}->[$i];
+	foreach my $j(-$self->{_header}->[1]..-1){
+	    print $c->[$j], $j<-1?"\x1F\n":"\x1F\x1F\n";
+	}
+    }
 }
 
 1;
@@ -256,8 +289,6 @@ Inherited from L<Text::FIGlet::Font>.
 
 =head2 C<freeze>
 
-Not yet implemented.
-
 Allow for the preservation of the current (random) font for reuse,
 and to avoid the performance penalty incurred upon B<Random>-ization.
 
@@ -277,9 +308,14 @@ If undefined the default is F</usr/games/lib/figlet>
 
 =head1 CAVEATS
 
-B<Ransom> does not work well with B<-m> modes other than I<-1> at this time.
+B<Ransom> does not work well with B<-m> modes other than I<-1> & I<0> at this time.
 
-As noted above, though it is easy to overlook, B<Ransom> only supports ASCII.
+As noted above, though it is easy to overlook, B<Ransom> only supports ASCII input.
+
+Very few so-called "monospace" fonts are fixed-width across all codepoints,
+and the results of mixing FIGlet and TOIlet fonts may be skewed in such a font.
+Some true monspace fonts include Bitstream Monospace and GNU FreeFont FreeMono.
+OCR A Std and OCR B MT also work at 9, 11 and 12 points, but not 10.
 
 =head1 SEE ALSO
 

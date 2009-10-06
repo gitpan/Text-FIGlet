@@ -1,7 +1,14 @@
 use ExtUtils::MakeMaker;
 
 #To bypass make test: t/*.t for perl 5.005
-rename('t', 'TEST') if $] < 5.006;
+#if( $] < 5.006 ){
+#    rename('t', 'TEST') ;
+#    open(MANIFEST, '+<MANIFEST') or warn ('Eep! no MANIFEST?');
+#    $_ = do{ undef $/; <MANIFEST> };
+#    s%^t/%TEST/%mg;
+#    seek(MANIFEST, 0, 0);
+#    print MANIFEST;
+#}
 
 WriteMakefile(
 	      NAME	   => 'Text::FIGlet',

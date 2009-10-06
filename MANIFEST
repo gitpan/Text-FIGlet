@@ -26,5 +26,5 @@ t/2-extended.t
 t/2.flc
 t/2.flf
 t/3-ransom.t
-test.pl
+t/5005-lib.pm
 META.yml                                 Module meta-data (added by MakeMaker)

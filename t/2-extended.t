@@ -1,11 +1,15 @@
-BEGIN{ exit -1 if $] < 5.006; eval "use Test::Simple tests => 6; use Test::Differences"; $|=1}
+BEGIN{
+	$|=1;
+	my $t = 7;
+	$] < 5.006 ? do{ print "1..$t\n"; require 't/5005-lib.pm'} :
+	eval "use Test::More tests => $t; use Test::Differences"; }
 use Text::FIGlet;
 
 
 #0 implicit -d test
 my $font = Text::FIGlet->new(-d=>'t/', -f=>'2', -U=>1);
 
-#1
+#1A
 my $txt1=<<'UNICODE';
  _\_/_ _ \\//
 |__  /| | \/ 
@@ -14,7 +18,11 @@ my $txt1=<<'UNICODE';
 /____||_____|
              
 UNICODE
-eq_or_diff scalar $font->figify(-A=>"\x{17d}\x{13d}", -U=>1), $txt1, "Unicode";
+$] < 5.006 ? ok(-1, 'SKIPPING Unicode \x in pre-5.6 perl') :
+eq_or_diff scalar $font->figify(-A=>"\x{17d}\x{13d}", -U=>1), $txt1, "Unicode \x";
+
+#1B
+eq_or_diff scalar $font->figify(-A=>"ŽĽ", -U=>1), $txt1, "Unicode literal";
 
 
 #2

@@ -1,10 +1,18 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
+2.17	Mon Oct 05 22h EST 2009
+	- Added tests to check smush modes -1, -0, 0
+	- Added support for -m=0 to Ransom
+	- Reworked tests for 5.005 support, no more monkeying with Makefile.PL
+	- Fixed 5.6.X failure from utf8 promotion code w/ Encode::compat sub
+	- Should be clear on 5.00503, 5.6.2, 5.10.0 (linux)
+	- Implemented Ransom font freezing
+
 2.16	Mon Oct 05 03h EST 2009
 	- Fixed bug introduced way back in 1.07, that caused newlines in -A
 	  to be ignored, and added a test to catch future breakage.
-	- Fixed -v which broke when I created own sum() for 5.005
+	- Fixed -v which broke for some fonts when I created own sum() for 5.005
 	- Minor performance tweaks
 
 2.15	Sun Oct 04 19h EST 2009, forgot to hit submit on PAUSE
