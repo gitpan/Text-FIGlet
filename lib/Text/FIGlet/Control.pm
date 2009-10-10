@@ -1,5 +1,4 @@
 package Text::FIGlet::Control;
-require 5;
 use strict;
 use vars '$VERSION';
 use Carp 'croak';

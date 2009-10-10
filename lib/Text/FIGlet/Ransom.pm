@@ -37,7 +37,7 @@ sub new{
 
   #Synthesize a header
   #Hardblank = DEL
-  $self->{_header}->[0] = "\177";
+  $self->{_header}->[0] = "\x7F";
   #Height
   $self->{_header}->[1] = max( map {$_->{_header}->[1]} @fonts );
   #Base height
@@ -110,7 +110,7 @@ sub new{
     #Common hardblank
     my $iHard=$fonts[$R]->{_header}->[0];
     foreach my $j(-$self->{_header}->[1]..-1){
-      $c->[$j]=~ s/$iHard/\177/g;
+      $c->[$j]=~ s/$iHard/$self->{_header}->[0]/g;
       #$c->[$j].= Text::FIGlet::UTF8len($c->[$j]);
     }
 
@@ -122,7 +122,7 @@ sub new{
 
 sub freeze{
     my $self = shift;
-    my $comments;
+    my $font;
 
     foreach my $opt ( sort grep {/^-/} keys %{$self} ){
 	my $val = $self->{$opt};
@@ -138,19 +138,19 @@ sub freeze{
 	elsif( ref($val) eq 'HASH' ){
 	    $val = '{undef,'. $self->{_fonts}->[0] .','. join(',',%{$val}) .'}';
 	}
-	$comments .= sprintf "#%s => %s\n", $opt, $val;
+	$font .= sprintf "#%s => %s\n", $opt, $val;
 	$self->{_header}->[5]++;
     }
 
-    printf "flf2a%s %s %s %s %s %s %s\n", @{$self->{_header}};
-    print $comments;
+    $font = sprintf("flf2a%s %s %s %s %s %s %s\n", @{$self->{_header}}). $font;
 
     for(my $i=32; $i<= scalar @{$self->{_font}}; $i++ ){
 	my $c = $self->{_font}->[$i];
 	foreach my $j(-$self->{_header}->[1]..-1){
-	    print $c->[$j], $j<-1?"\x1F\n":"\x1F\x1F\n";
+	    $font .= $c->[$j] . ($j<-1?"\x1F\n":"\x1F\x1F\n");
 	}
     }
+    return $font;
 }
 
 1;
@@ -289,8 +289,16 @@ Inherited from L<Text::FIGlet::Font>.
 
 =head2 C<freeze>
 
-Allow for the preservation of the current (random) font for reuse,
-and to avoid the performance penalty incurred upon B<Random>-ization.
+Returns a string containing the current font. This allows for the preservation
+of the current (random) font for reuse, and to avoid the performance penalty
+incurred upon B<Ransom>-ization.
+
+To cope with the vagaries of input font formatting, a frozen B<Ransom> font has
+hardblank & endmark characters converted to DEL (x7F) and US (x1F) respectively.
+
+The frozen font also includes as comments the parameters used to create it.
+The comments for random ARRAYREF fonts, a map of which characters are pulled
+from which source font.
 
 =head1 ENVIRONMENT
 

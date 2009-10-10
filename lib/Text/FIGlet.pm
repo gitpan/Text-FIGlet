@@ -1,35 +1,42 @@
-package Text::FIGlet;          #~50us penalty w/ 2 constant calls for 5.005
-use constant PRIVb => 0xF0000; #Map neg chars into Unicode's private area
-use constant PRIVe => 0xFFFFD; #0-31 are also available but unused.
+package Text::FIGlet;
 use strict;
 use vars qw'$VERSION %RE';
+$VERSION = 2.18;               #Actual code version: 2.18
+
+                               #~50us penalty w/ 2 constant calls for 5.005
+use constant PRIVb => 0xF0000; #Map neg chars into Unicode's private area
+use constant PRIVe => 0xFFFFD; #0-31 are also available but unused.
 use Carp qw(carp croak);
 use File::Spec;
 use File::Basename 'fileparse';
-$VERSION = 2.17; #Actual code version: 2.17
-
 use Text::FIGlet::Control;
 use Text::FIGlet::Font;
 use Text::FIGlet::Ransom;
 
+
 if( $] >= 5.008 ){
-    eval "use Encode";
-}
-#From Encode::compat, but lower from 5.006001 to 5.006
+    require Encode; #Run-time rather than compile-time, without an eval
+    import Encode;
+}   #Next block from Encode::compat, but broadened from 5.6.1 to 5.6
 elsif ($] >= 5.006 and $] <= 5.007) {
-    package Encode;
-    sub _utf8_on  { $_[0] = pack('U*', unpack('U0U*', $_[0])) }
-    sub _utf8_off { $_[0] = pack('C*', unpack('C*',   $_[0])) }
+    sub Encode::_utf8_on  { $_[0] = pack('U*', unpack('U0U*', $_[0])) }
+    sub Encode::_utf8_off { $_[0] = pack('C*', unpack('C*',   $_[0])) }
 }
 else{
+    local $^W = 0;
     eval "sub Encode::_utf8_off{}; sub Encode::_utf8_on{}";
 }
 
+
+my $thByte = '[\x80-\xBF]';
 %RE = (
-       UTFchar => qr/([\xC0-\xDF].|[\xE0-\xEF]..|[\xF0-\xFF]...|.)/s,
+#XXX catch-all . necessary for Unicode/negative char to work :-/
+#       UTFchar => qr/([\xC0-\xDF].|[\xE0-\xEF]..|[\xF0-\xFF]...|.)/s,
+       UTFchar => qr/([\x20-\x7F]|[\xC2-\xDF]$thByte|[\xE0-\xEF]$thByte{2}|[\xF0-\xF4]$thByte{3})/,
        bytechar=> qr/(.)/s,
        no      => qr/(-?)((0?)(?:x[\da-fA-F]+|\d+))/,
        );
+
 
 sub import{
   @_ = qw/UTF8chr UTF8ord UTF8len/ if grep(/:Encode/, @_);
@@ -39,6 +46,7 @@ sub import{
     *{scalar(caller).'::'.$_} = $_ for grep/UTF8chr|UTF8ord|UTF8len/, @_;
   }
 }
+
 
 sub new {
   local $_;
@@ -60,20 +68,6 @@ sub new {
   $class->new(@_);
 }
 
-sub _no{
-  my($one, $two, $thr, $over) = @_;
-
-  my $val = ($one ? -1 : 1) * ( $thr eq 0 ? oct($two) : $two);
-
-  #+2 is to map -2 to offset zero (-1 is forbidden, modern systems have no -0)
-  $val += PRIVe + 2 if $one;
-  if( $one && $over && $val < PRIVb ){
-    carp("Extended character out of bounds");
-    return 0;
-  }
-
-  $val;
-}
 
 sub UTF8chr{
   my $ord = shift || $_;
@@ -102,12 +96,14 @@ sub UTF8chr{
   return pack "C*", @n;
 }
 
+
 sub UTF8len{
   my $str = shift || $_;
   my $thByte = qr/[\x80-\xBF]/;
   #XXX Should perhaps put 1 byte UTF-8 last, as . instead, to catch ANSI-fonts?
-  my $count = () = $str =~ m/([\x00-\x7F]|[\xC2-\xDF]$thByte|[\xE0-\xEF]$thByte{2}|[\xF0-\xF4]$thByte{3})/g;
+  my $count = () = $str =~ m/$Text::FIGlet::RE{UTFchar}/g;
 }
+
 
 sub UTF8ord{
   my $str = shift || $_;
@@ -125,6 +121,23 @@ sub UTF8ord{
   return $str;
 }
 
+
+sub _no{
+  my($one, $two, $thr, $over) = @_;
+
+  my $val = ($one ? -1 : 1) * ( $thr eq 0 ? oct($two) : $two);
+
+  #+2 is to map -2 to offset zero (-1 is forbidden, modern systems have no -0)
+  $val += PRIVe + 2 if $one;
+  if( $one && $over && $val < PRIVb ){
+    carp("Extended character out of bounds");
+    return 0;
+  }
+
+  $val;
+}
+
+
 sub _canonical{
   my($defdir, $usrfile, $extre, $backslash) = @_;
 
@@ -133,12 +146,14 @@ sub _canonical{
 
   my $curdir = File::Spec->catfile(File::Spec->curdir, "");
   $path = $defdir if $path eq $curdir && index($usrfile, $curdir) < 0;
-  
+
   return File::Spec->catfile($path, $file.$ext);
 }
 
+"Act kind of random and practice less beauty sense --ginoh";
+
 __END__
-1;
+
 =pod
 
 =head1 NAME
@@ -181,10 +196,14 @@ C<new>
 Creates a control object. L<Text::File::Control> for control object specific
 options to new, and how to use the object.
 
-=item B<-f=E<gt>>F<fontfile>
+=item B<-f=E<gt>>F<fontfile> | I<\@fonts> | I<\%fonts>
 
-Creates a font object. L<Text::File::Font> for font object specific options
-to new, and how to use the object.
+Loads F<fontfile> if specified, and creates a font object.
+L<Text::File::Font> for font object specific options to new,
+and how to use the object.
+
+With the other forms of B<-f>, a number of fonts can be loaded and blended
+into a single font as a L<Text::FIGlet::Ransom> object.
 
 =item B<-d=E<gt>>F<fontdir>
 

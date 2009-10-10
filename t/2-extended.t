@@ -19,7 +19,7 @@ my $txt1=<<'UNICODE';
              
 UNICODE
 $] < 5.006 ? ok(-1, 'SKIPPING Unicode \x in pre-5.6 perl') :
-eq_or_diff scalar $font->figify(-A=>"\x{17d}\x{13d}", -U=>1), $txt1, "Unicode \x";
+eq_or_diff scalar $font->figify(-A=>"\x{17d}\x{13d}", -U=>1), $txt1, "Unicode \\x";
 
 #1B
 eq_or_diff scalar $font->figify(-A=>"ŽĽ", -U=>1), $txt1, "Unicode literal";

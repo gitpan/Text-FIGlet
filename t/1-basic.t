@@ -1,6 +1,6 @@
 BEGIN{
 	$|=1;
-	my $t = 9;
+	my $t = 10;
 	$] < 5.006 ? do{ print "1..$t\n"; require 't/5005-lib.pm'} :
 	eval "use Test::More tests => $t; use Test::Differences"; }
 use Text::FIGlet;
@@ -123,3 +123,16 @@ __        __     _             _        _          _
                                                             
 MODE-0
 eq_or_diff scalar $font->figify(-A=>"Fixed Width"), $txt9, "-m=>-0";
+
+
+#10
+$font = Text::FIGlet->new(-m=>undef);
+my $txt10 = <<'MODE-o';
+  ___                  _             
+ / _ \__   __ ___ _ __| | __ _ _ __  
+| | | \ \ / // _ | '__| |/ _` | '_ \ 
+| |_| |\ V /|  __| |  | | (_| | |_) |
+ \___/  \_/  \___|_|  |_|\__,_| .__/ 
+                              |_|    
+MODE-o
+eq_or_diff scalar $font->figify(-A=>"Overlap"), $txt10, "-m=>undef";

@@ -6,7 +6,7 @@ NAME
 
 SYNOPSIS
      my $font = Text::FIGlet-E<gt>new(-f=>"doh");
-     $font->figify(-A=>"Hello World");
+     print scalar $font->figify(-A=>"Hello World");
 
 DESCRIPTION
 
@@ -21,12 +21,13 @@ DESCRIPTION
      But why? In Bob's name WHY?! What purpose could it serve?
 
      If you want something more substantive imagine:
-         * Run Apache with mod_perl
-         * In F<startup.pl> create a Text::FIGlet object
-           * figify text for the heads of Directory listings,
-             and you look like a warm and fuzzy BBS
-           * create ornate text based counters or timestamps on pages
-	   * {shudder} CAPTCHA bots
+       * Run Apache with mod_perl
+       * In F<startup.pl> create a Text::FIGlet object
+         * figify text for the heads of Directory listings,
+           and you look like a warm and fuzzy BBS
+         * create ornate text based counters or timestamps on pages
+         * {shudder} CAPTCHA bots
+           NOTE: Ransom mode--unique to this implementation--may be handy here.
 
      Or not, I just make the scissors, now run along.
 

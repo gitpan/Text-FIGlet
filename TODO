@@ -1,3 +1,5 @@
+!!!	$^W isn't mutable at runtime in 5.005
+
 FIX
 ?	charmap for widechar/TOIlet fonts
 
@@ -24,6 +26,8 @@ VRFY
 TEST
 	-U=0, -U=-1
 
+XXX	add test for DOS txt file font?
+
 REFACTOR
 	Switch to ::AnyInflate?
 
@@ -36,13 +40,13 @@ REFACTOR
 		 Pre-allocating length halves size of array,
 		 req. scan file for - 1st, seek/read backwards? iff -U
 		     (assumes sane file order, but is okay for optimization?)
+		     Alas header[-1], codetag count, is useless here
 
 		 Hash(collision performance hit)?
 
 		 2nd array(code complexity?)?
 
 	detect if glyph has been seen before, and reference it?
-	       potential over-smushification problem
 
 	reduce reliance upon $/
 		ammend split expression?
@@ -63,14 +67,19 @@ REFACTOR
 		 -1 = figchar count!! optimize file parser with this?
 
 FEATURES
-	- smushing (-m=1|2|4|8|16|32)
+	- smushing
 
-	  TOIlet -o/verlap mode? (partial lamination of each FIGchar)
-          Would have to know what chars are "inside" the top letter for opacity
+		means of enabling old big X mode? 16**2?
+
+	  	Very difficult for non-rectangular fonts though...
+	  	If at each character join, s/\000 /\000/ on copy happens HEIGHT times,
+	  	swap that in and repeat until it doesn't? Or is kerning first enough?
 
 	- "Vertical Fitting", indicated by header[-2] above
 
-	- Unicode ransom
+	- Ransom support for ANSI & Unicode (w/ sparse codepoints)
+
+	- Ransom script to generate font, test output, then save font
 
         - QOTW19 "OCR"?
 
@@ -78,3 +87,6 @@ FEATURES
 		- isn't u enough?
 
 	- other scripts: chkfont--
+
+XXX	- test 4, and 5005-lib.pm => test-lib.pm
+	  remove bin/figlet.pl line from README
