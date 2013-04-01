@@ -320,10 +320,11 @@ B<Ransom> does not work well with B<-m> modes other than I<-1> & I<0> at this ti
 
 As noted above, though it is easy to overlook, B<Ransom> only supports ASCII input.
 
-Very few so-called "monospace" fonts are fixed-width across all codepoints,
-and the results of mixing FIGlet and TOIlet fonts may be skewed in such a font.
-Some true monspace fonts include Bitstream Monospace and GNU FreeFont FreeMono.
-OCR A Std and OCR B MT also work at 9, 11 and 12 points, but not 10.
+Very few so-called "monospace" display fonts are fixed-width across all
+codepoints, and the results of mixing FIGlet and TOIlet fonts may be
+mangled in such a font. Some true monspace fonts include Bitstream Monospace
+and GNU FreeFont FreeMono. OCR A Std and OCR B MT also work at 9, 11 and 12
+points, but not 10.
 
 =head1 SEE ALSO
 

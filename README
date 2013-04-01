@@ -48,7 +48,8 @@ EXAMPLES
 |  _  ||  __/| || || (_) |   \ V  V /  | (_) || |   | || (_| |
 |_| |_| \___||_||_| \___/     \_/\_/    \___/ |_|   |_| \__,_|
 
-figlet.pl is a young adult and does not yet do smushing, among other things.
+figlet.pl is a young adult and does not yet do sophisticated smushing,
+or other fancy layout like vertical fitting.
 
 minifig.pl is a self-contained version of figlet.pl
 It requires nothing more than a standard Perl distribution.

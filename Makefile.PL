@@ -17,4 +17,5 @@ WriteMakefile(
 	      EXE_FILES    =>[ glob('bin/*.pl'), 'bin/minifig.pl' ],
 	      ($] < 5.006 ? () :#Test dependency bypass
 	       (PREREQ_PM    =>{'Test::Differences' => undef})),
+	      LICENSE      => 'perl', #More or less
 	     );

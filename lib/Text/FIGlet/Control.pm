@@ -182,6 +182,8 @@ will make use of these environment variables if present
 The default location of fonts.
 If undefined the default is F</usr/games/lib/figlet>
 
+=back
+
 =head1 FILES
 
 FIGlet control files are available at

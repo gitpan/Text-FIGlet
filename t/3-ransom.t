@@ -19,7 +19,7 @@ my $pinky = <<'PINKY';
    |_|                  
                         
 PINKY
-eq_or_diff(~~$font->figify(-A=>'Troz!'), $pinky, 'Known FIGlet mix, top');
+eq_or_diff(~~$font->figify(-A=>'Troz!'), $pinky, 'QR FIGlet, TOP');
 
 
 #2 Known mix, default center
@@ -35,7 +35,7 @@ my $brain = <<'BRAIN';
    |_|                  
                         
 BRAIN
-eq_or_diff(~~$font->figify(-A=>'Troz!'), $brain, 'Known FIGlet mix, default center');
+eq_or_diff(~~$font->figify(-A=>'Troz!'), $brain, 'QR FIGlet, CENTER');
 
 
 #3 Known mix, baseline
@@ -49,7 +49,7 @@ my $cheezes = <<'CHEEZES';
    |_|  ╹┗╸┗━┛┗━╸╹
                   
 CHEEZES
-eq_or_diff(~~$font->figify(-A=>'Troz!'), $cheezes, 'Known TOIlet+FIGlet mix, baseline');
+eq_or_diff(~~$font->figify(-A=>'Troz!'), $cheezes, 'QR TOIlet+FIGlet, BASELINE');
 
 
 #4 Known mix, baseline
@@ -63,5 +63,5 @@ my $plots = <<'PLOTS';
    |_|  ┣┳┛┃ ┃┏━┛╹
         ╹┗╸┗━┛┗━╸╹
 PLOTS
-eq_or_diff(~~$font->figify(-A=>'Troz!'), $plots, 'Known TOIlet+FIGlet mix, bottom');
+eq_or_diff(~~$font->figify(-A=>'Troz!'), $plots, 'QR TOIlet+FIGlet, BOTTOM');
 #do{y/ /./; print STDERR} foreach (~~$font->figify(-A=>'Troz!'), $plots);

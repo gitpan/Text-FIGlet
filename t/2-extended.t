@@ -7,7 +7,7 @@ use Text::FIGlet;
 
 
 #0 implicit -d test
-my $font = Text::FIGlet->new(-d=>'t/', -f=>'2', -U=>1);
+my $font = Text::FIGlet->new(-d=>'t/', -f=>'2', -U=>1, -m=>0);
 
 #1A
 my $txt1=<<'UNICODE';
@@ -19,10 +19,10 @@ my $txt1=<<'UNICODE';
              
 UNICODE
 $] < 5.006 ? ok(-1, 'SKIPPING Unicode \x in pre-5.6 perl') :
-eq_or_diff scalar $font->figify(-A=>"\x{17d}\x{13d}", -U=>1), $txt1, "Unicode \\x";
+eq_or_diff scalar $font->figify(-A=>"\x{17d}\x{13d}", -U=>1), $txt1, "UTF8 \\x";
 
 #1B
-eq_or_diff scalar $font->figify(-A=>"ŽĽ", -U=>1), $txt1, "Unicode literal";
+eq_or_diff scalar $font->figify(-A=>"ŽĽ", -U=>1), $txt1, "UTF8 LITERAL";
 
 
 #2
@@ -50,7 +50,7 @@ my $txt3 = <<'CLEAN';
 ┣━┛┣━┫┣━┛┣╸ ┣┳┛
 ╹  ╹ ╹╹  ┗━╸╹┗╸
 CLEAN
-eq_or_diff(~~$font->figify(-A=>'Paper'), $txt3, 'Clean TOIlet');
+eq_or_diff(~~$font->figify(-A=>'Paper'), $txt3, 'CLEAN TOIlet');
 
 
 #4 Wrapped TOIlet
@@ -61,7 +61,7 @@ my $txt4 = <<'WRAP';
 ╹ ╹┗━╸┗━╸┗━╸┗━┛   ┗┻┛┗━┛╹┗╸┗━╸╺┻┛
 WRAP
 my $out = ~~$font->figify(-A=>'Hello World',-w=>240);
-eq_or_diff($out, $txt4, 'TOIlet wrapping');
+eq_or_diff($out, $txt4, 'TOIlet WRAP');
 
 
 #5&6 Compressed TOIlet

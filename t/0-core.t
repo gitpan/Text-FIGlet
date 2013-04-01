@@ -1,6 +1,6 @@
 BEGIN{
 	$|=1;
-	my $t = 5;
+	my $t = 6;
 	$] < 5.006 ? do{ print "1..$t\n"; require 't/5005-lib.pm'} :
 	eval "use Test::More tests => $t; use Test::Differences"; }
 use Text::FIGlet;
@@ -20,9 +20,9 @@ my $font = Text::FIGlet->new();
 #}Tests {
   eval{ Text::FIGlet->new("_\\"=>1, -C=>'.\foo.flc') };
   #wish i could say that everyone was wrong
-  like($@, qr/\[(?:\.\\)?foo.flc\]/,'Win32 fileparse hack');
+  like($@, qr/\[(?:\.\\)?foo.flc\]/,'WIN32 FILEPARSE RELATIVE');
   eval{ Text::FIGlet->new("_\\"=>1, -C=>'\bar\qux.flc') };
-  like($@, qr/\[\\bar\\qux.flc\]/,  'Win32 fileparse hack');
+  like($@, qr/\[\\bar\\qux.flc\]/,  'WIN32 FILEPARSE ABSOLUTE');
 
 #}Return things to normal {
   File::Basename::fileparse_set_fstype($FS);
@@ -30,16 +30,17 @@ my $font = Text::FIGlet->new();
 }
 
 
+#Avoid "chicken & egg" of verifying -m0 before core by testing single chars
 #3
 my $txt1 = <<'ASCII';
- /\/| _   _        _  _         __        __              _      _  /\/|
-|/\/ | | | |  ___ | || |  ___   \ \      / /  ___   _ __ | |  __| ||/\/ 
-     | |_| | / _ \| || | / _ \   \ \ /\ / /  / _ \ | '__|| | / _` |     
-     |  _  ||  __/| || || (_) |   \ V  V /  | (_) || |   | || (_| |     
-     |_| |_| \___||_||_| \___/     \_/\_/    \___/ |_|   |_| \__,_|     
-                                                                        
+ /\/|
+|/\/ 
+     
+     
+     
+     
 ASCII
-eq_or_diff scalar $font->figify(-A=>"~Hello World~", -m=>-1), $txt1, "ASCII";
+eq_or_diff scalar $font->figify(-A=>"~"), $txt1, "ASCII ~";
 
 
 #4
@@ -51,17 +52,34 @@ my $txt2 = <<'ANSI';
 \/   \/
        
 ANSI
-eq_or_diff scalar $font->figify(-A=>chr(164), -m=>-1), $txt2, "ANSI";
+eq_or_diff scalar $font->figify(-A=>chr(164)), $txt2, "ANSI [currency]";
 
 
 #5
-$font = Text::FIGlet->new(-D=>1);
+$font = Text::FIGlet->new(-D=>1, -m=>0);
 my $txt3 = <<'DEUTCSH';
- _   _  _   _  _   _  _   _  _   _  _   _   ___ 
-(_)_(_)(_)_(_)(_) (_)(_)_(_)(_)_(_)(_) (_) / _ \
-  /_\   / _ \ | | | | / _` | / _ \ | | | || |/ /
- / _ \ | |_| || |_| || (_| || (_) || |_| || |\ \
-/_/ \_\ \___/  \___/  \__,_| \___/  \__,_|| ||_/
-                                          |_|   
+  ___ 
+ / _ \
+| |/ /
+| |\ \
+| ||_/
+|_|   
 DEUTCSH
-eq_or_diff scalar $font->figify(-A=>'[\\]{|}~', -m=>-1), $txt3, "DEUTSCH";
+eq_or_diff scalar $font->figify(-A=>'~'), $txt3, "DEUTSCH s-z";
+
+#6
+my $txt6 = <<'NEWLINE';
+ __  __ 
+|  \/  |
+| |\/| |
+| |  | |
+|_|  |_|
+        
+       
+ _   _ 
+| | | |
+| |_| |
+ \__,_|
+       
+NEWLINE
+eq_or_diff scalar $font->figify(-A=>"M\nu"), $txt6, "-A=>\\n";

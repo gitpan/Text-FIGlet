@@ -1,7 +1,7 @@
 package Text::FIGlet;
 use strict;
 use vars qw'$VERSION %RE';
-$VERSION = 2.18;               #Actual code version: 2.18
+$VERSION = 2.19;               #Actual code version: 2.19
 
                                #~50us penalty w/ 2 constant calls for 5.005
 use constant PRIVb => 0xF0000; #Map neg chars into Unicode's private area
@@ -17,21 +17,23 @@ use Text::FIGlet::Ransom;
 if( $] >= 5.008 ){
     require Encode; #Run-time rather than compile-time, without an eval
     import Encode;
+    eval 'sub _utf8_on  {Encode::decode("utf8",shift)}';
+#          sub _utf8_off {Encode::_utf8_off(@_)}';
 }   #Next block from Encode::compat, but broadened from 5.6.1 to 5.6
 elsif ($] >= 5.006 and $] <= 5.007) {
-    sub Encode::_utf8_on  { $_[0] = pack('U*', unpack('U0U*', $_[0])) }
-    sub Encode::_utf8_off { $_[0] = pack('C*', unpack('C*',   $_[0])) }
+    eval 'sub _utf8_on  { $_[0] = pack("U*", unpack("U0U*", $_[0])) }
+          sub Encode::_utf8_off { $_[0] = pack("C*", unpack("C*",   $_[0])) }';
 }
 else{
     local $^W = 0;
-    eval "sub Encode::_utf8_off{}; sub Encode::_utf8_on{}";
+    eval "sub _utf8_on{}; sub Encode::_utf8_off{};";
 }
 
 
 my $thByte = '[\x80-\xBF]';
 %RE = (
-#XXX catch-all . necessary for Unicode/negative char to work :-/
-#       UTFchar => qr/([\xC0-\xDF].|[\xE0-\xEF]..|[\xF0-\xFF]...|.)/s,
+       #XXX Should perhaps put 1 byte UTF-8 last as . instead, to catch ANSI
+       #XXX Alas that catches many other unfortunate things...
        UTFchar => qr/([\x20-\x7F]|[\xC2-\xDF]$thByte|[\xE0-\xEF]$thByte{2}|[\xF0-\xF4]$thByte{3})/,
        bytechar=> qr/(.)/s,
        no      => qr/(-?)((0?)(?:x[\da-fA-F]+|\d+))/,
@@ -99,8 +101,6 @@ sub UTF8chr{
 
 sub UTF8len{
   my $str = shift || $_;
-  my $thByte = qr/[\x80-\xBF]/;
-  #XXX Should perhaps put 1 byte UTF-8 last, as . instead, to catch ANSI-fonts?
   my $count = () = $str =~ m/$Text::FIGlet::RE{UTFchar}/g;
 }
 
@@ -150,7 +150,7 @@ sub _canonical{
   return File::Spec->catfile($path, $file.$ext);
 }
 
-"Act kind of random and practice less beauty sense --ginoh";
+local $_="Act kind of random and practice less beauty sense --ginoh";
 
 __END__
 
@@ -295,7 +295,7 @@ try importing C<UTF8chr> from this module.
 
 This module also offers C<UTF8ord> and C<UTF8len>, which are used internally,
 but may be of general use. To import all three functions, use the B<:Encode>
-import tag.
+import tag. C<UTF8len> does not count control characters (0x00-0x19)!
 
 =head1 AUTHOR
 

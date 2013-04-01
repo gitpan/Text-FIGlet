@@ -4,10 +4,10 @@ use vars qw($REwhite $VERSION);
 use Carp qw(cluck confess);
 use Symbol; #5.005 support
 use Text::Wrap;
-$VERSION = 2.18;
+$VERSION = 2.19;
 
 #'import' core support functions from parent with circular dependency
-foreach( qw/UTF8len UTF8ord _canonical _no/){
+foreach( qw/UTF8len UTF8ord _canonical _no _utf8_on/){
   no strict 'refs';
   *$_ = *{'Text::FIGlet::'.$_};
 }
@@ -34,7 +34,7 @@ sub _load_font{
 			      $^O =~ /MSWin32|DOS/i);
   #XXX bsd_glob .[ft]lf
   $self->{_file} = (glob($self->{_file}.'.?lf'))[0] unless -e $self->{_file};
-
+  #XXX retest for existence in case someone does -f foo instead of -f=foo?
 
   #open(FLF, $self->{_file}) || confess("$!: $self->{_file}");
   $self->{_fh} = gensym;            #5.005 support
@@ -113,7 +113,7 @@ sub _load_font{
   close($fh);
 
 
-  #monospace
+  #Fixed width
   if( defined($self->{-m}) && $self->{-m} == -3 ){
     my $pad;
     for(my $ord=0; $ord < scalar @{$font}; $ord++){
@@ -133,7 +133,7 @@ sub _load_font{
       }
     }
   }
-  #fullwidth
+  #Full width
   elsif( defined($self->{-m}) && $self->{-m} == -1 ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
       next unless defined $font->[$ord];
@@ -147,7 +147,7 @@ sub _load_font{
       }
     }
   }
-  #smush...
+  #Kern glyph boxes
   elsif( !defined($self->{-m}) || $self->{-m} > -1 ){
     for(my $ord=32; $ord < scalar @{$font}; $ord++){
       next unless defined $font->[$ord];
@@ -179,8 +179,7 @@ sub _load_char{
     unless( $REtrail ){
       /(.)\s*$/;
       $end = $1;
-      #The negative leading anchor is for term 0x40
-      #$REtrail = qr/(?<!^)([ $self->{_header}->[0]]+)\Q$end$end\E?\s*$/;
+      #The negative leading anchor is for term.flf 0x40
       $REtrail = qr/(?<!^)([ $self->{_header}->[0]]+)\Q$end{1,2}\E?\s*$/;
     }
     if( $wLead && s/^(\s+)// ){
@@ -199,11 +198,11 @@ sub _load_char{
 		     -(s/(\Q$end\E+)$/$end/&&UTF8len($1))  ) > $length;
     $font->[$i] .= $line;
   }
-  #XXX :-/ stop trying at 125 in case of map in ~ or extended....
+  #XXX :-/ stop trying at 125 in case of charmap in ~ or extended....
   $self->{_maxLen} = $length if $i < 126 && $self->{_maxLen} < $length;
 
   #Ideally this would be /o but then all figchar's must have same EOL
-  $font->[$i] =~ s/\015|\Q$end\E{1,2}\r?$//mg;
+  $font->[$i] =~ s/\015|\Q$end\E{1,2}\s*\r?$//mg;
   $font->[$i] = [$length,#maxLen
 		 $wLead, #wLead
 		 $wTrail,#wTrail
@@ -222,7 +221,7 @@ sub figify{
     $opts{-w} ||= 80;
     &Encode::_utf8_off($opts{-A}) if $] >= 5.008;
 
-    #Do text formatting here...
+    #Prepare the input
     $opts{-X} ||= $self->{_header}->[6] ? 'R' : 'L';
     if( $opts{-X} eq 'R' ){
 	$opts{-A} = join('', reverse(split('', $opts{-A})));
@@ -235,7 +234,6 @@ sub figify{
 	$Text::Wrap::columns =2 if $Text::Wrap::columns < 2;
 	$opts{-A} = Text::Wrap::wrap('', '', $opts{-A});
     }
-    #No-wrap test, missing pre 2.00 :-(
     elsif( $opts{-w} > 0 ){
 	$Text::Wrap::columns = $opts{-w}+1;
 	unless( $opts{-w} == 1 ){
@@ -254,10 +252,11 @@ sub figify{
 	$opts{-A} =~ tr/\0//d;
     }
 
-    my $X = defined($self->{-m}) ? '' : "\000";
 
+    #Assemble glyphs
+    my $X = defined($self->{-m}) && $self->{-m} < 0 ? '' : "\000";
     foreach( split("\n", $opts{-A}) ){
-      my @lchars;
+      my(@lchars, @lines);
       s/^\s*//o; #XXX
 #      push(@lchars, ord $1) while /(.)/g;
       while( $opts{-U} ?
@@ -270,45 +269,80 @@ sub figify{
 	my $line='';
 	foreach my $lchar (@lchars){
 	  if( $font->[$lchar] ){
-	    $line .= $X . $font->[$lchar]->[$i] if $font->[$lchar]->[$i];
+	    $line .= $font->[$lchar]->[$i] . $X if $font->[$lchar]->[$i];
 	  }
 	  else{
-	    $line .= $X . $font->[32]->[$i];
+	    $line .= $font->[32]->[$i] . $X;
 	  }
 	}
 
-	#$self->{_header}->[0] = qr/@{[sprintf "\\%o", ord($self->{_header}->[0])]}/;
-
-	#Do some more text formatting here... (smushing?)
-	$opts{-x} ||= $opts{-X} eq 'R' ? 'r' : 'l';
-	if( $opts{-x} eq 'c' ){
-	  $line = " "x(($opts{-w}-length($line))/2) . $line;
-	}
-	if( $opts{-x} eq 'r' ){
-	  $line = " "x($opts{-w}-length($line)) . $line;
-	}
-
-	#Replace hardblanks
-	$line =~ s/$self->{_header}->[0]/ /g;
-	
-	push @buffer, $line;
+	$line =~ s/\000$//;
+	push @lines, $line;
       }
-    }
 
-    #Overlap
-    if( $X ){
-	foreach( @buffer ){
-	    s/^\000|\000 //g;
-	    s/$Text::FIGlet::RE{UTFchar}\000//g;
+      #Kern glyphs?
+      if( !defined($self->{-m}) || $self->{-m} > -1 ){
+	for(my $nulls = 0; $nulls < scalar @lchars ; $nulls++){
+	  my $matches = 0;
+	  my @temp;
+	  for(my $i=0; $i<scalar @lines; $i++){
+	    $matches += ($temp[$i] = $lines[$i]) =~
+	      s/^([^\000]*(?:\000[^\000]*){$nulls})(?: \000|\000(?: |\Z))/$1\000/;
+	    
+	    #($_ = $temp[$i]) =~ s/(${stem}{$nulls})/$1@/;
+	    #print "$nulls, $i) $matches == @{[scalar @lines]} #$_\n";
+	    if( $i == scalar(@lines)-1 && $matches == scalar @lines ){
+	      @lines = @temp;
+	      $matches = 0;
+	      $i = -1;
+	    }
+	  }
 	}
+      }
+
+      push @buffer, @lines;
     }
 
-    #Properly promote (back) to utf-8
-    eval "use encoding  'utf-8'";
-    return wantarray ? map{Encode::_utf8_on($_)} @buffer : Encode::_utf8_on($_=join($/, @buffer).$/),$_ unless $] < 5.006;
+
+    #Layout
+    $opts{-x} ||= $opts{-X} eq 'R' ? 'r' : 'l';
+    foreach my $line (@buffer){
+      #Smush
+      if( !defined($self->{-m}) || $self->{-m} > 0 ){
+	
+
+	#Universal smush/overlap
+	$line =~ s/\000 //g;
+	$line =~ s/$Text::FIGlet::RE{UTFchar}\000//g;
+      }
+      else{
+	$line =~ y/\000//d;
+      }
+
+      #Alignment
+      if( $opts{-x} eq 'c' ){
+	$line = " "x(($opts{-w}-UTF8len($line))/2) . $line;
+      }
+      elsif( $opts{-x} eq 'r' ){
+	$line = " "x($opts{-w}-UTF8len($line)) . $line;
+      }
+
+      #Replace hardblanks
+      $line =~ s/$self->{_header}->[0]/ /g;
+    }
 
 
-    return wantarray ? @buffer : join($/, @buffer).$/;
+    if( $] < 5.006 ){
+	return wantarray ? @buffer : join($/, @buffer).$/;
+    }
+    else{
+	#Properly promote (back) to utf-8
+	eval "use encoding  'utf-8'";
+	return wantarray ? map{_utf8_on($_)} @buffer :
+	    _utf8_on($_=join($/, @buffer).$/);
+    }
+
+
 }
 1;
 __END__
@@ -328,13 +362,13 @@ Text::FIGlet::Font - text generation for Text::FIGlet
 
 =head1 DESCRIPTION
 
-Text::FIGlet::Font reproduces its input as large glyphs made up of other
+B<Text::FIGlet::Font> reproduces its input as large glyphs made up of other
 characters; usually ASCII, but not necessarily. The output is similar
 to that of many banner programs--although it is not oriented sideways--and
 reminiscent of the sort of I<signatures> many people like to put at the end
 of e-mail and UseNet messages.
 
-Text::FIGlet::Font can print in a variety of fonts, both left-to-right and
+B<Text::FIGlet::Font> can print in a variety of fonts, both left-to-right and
 right-to-left, with adjacent glyphs kerned and smushed together in various
 ways. FIGlet fonts are stored in separate files, which can be identified by
 the suffix I<.flf>. Most FIGlet font files will be stored in FIGlet's default
@@ -387,9 +421,9 @@ should be renamed with the B<flf> extension.
 
 Specifies how B<Text::FIGlet::Font> should "smush" and kern consecutive
 glyphs together. This parameter is optional, and if not specified the
-layoutmode specified by the font author is used. Acceptable values are
--3 through 63, where positive values are created by by adding together
-the corresponding numbers for each desired smush type.
+layoutmode defined by the font author is used. Acceptable values are
+-3 through 63, where positive values are created by adding together the
+corresponding numbers for each desired smush type.
 
 
   SUMMARY
@@ -408,50 +442,53 @@ the corresponding numbers for each desired smush type.
    32       -   -S -m32  smush hardblanks
 
    Old CLI is the figlet(6) equivalent option.
-   Monospace is also available via the previous value of I<-0>.
+   Monospace is also available via the previous value of -0.
 
 =over
 
-=item I<-3>
+=item I<-3>, Monospace
 
-Fixed width.
-
-This will pad each glyph in the font such that they are all a consistent
-width. The padding is done such that the glyph is centered in it's "box,"
+This will pad each glyph in the font such that they are all the same width.
+The padding is done such that the glyph is centered in it's "box,"
 and any odd padding is on the trailing edge.
+      ____
+     / ___|       ___      __      __
+    | |          / _ \     \ \ /\ / /
+    | |___      | (_) |     \ V  V /
+     \____|      \___/       \_/\_/
 
-=item I<-1>
+  |-----------+-----------+-----------| -- equal-sized boxes
+
+=item I<-1>, Full width
 
 No smushing or kerning, glyphs are simply concatenated together.
+     ____
+    / ___|   ___   __      __
+   | |      / _ \  \ \ /\ / /
+   | |___  | (_) |  \ V  V /
+    \____|  \___/    \_/\_/
 
-=item I<0>
+=item I<0>, Kern
 
 Kern only i.e; glyphs are pushed together until they touch.
+    ____
+   / ___| ___ __      __
+  | |    / _ \\ \ /\ / /
+  | |___| (_) |\ V  V /
+   \____|\___/  \_/\_/
 
-Note that this module does not properly kern at this time,
-as it kerns glyph containers rather than the glyphs proper.
-The difference is most pronounced in slanted fonts:
+=item I<undef>, Universal smush
 
-  Kerned glyph   Kerned box
-      __  __ _       __  __    _	
-     / / / /(_)	    / / / /   (_)
-    / /_/ // /	   / /_/ /   / /	
-   / __  // /	  / __  /   / /	
-  /_/ /_//_/	 /_/ /_/   /_/   
-
-=item I<undef>
-
-Overlap glyphs by one column:
-   _   _      _ _             _   _        _  _	  
-  | | | | ___| | | ___	     | | | |  ___ | || |  ___  
-  | |_| |/ _ | | |/ _ \	     | |_| | / _ \| || | / _ \ 
-  |  _  |  __| | | (_) | vs. |  _  ||  __/| || || (_) |
-  |_| |_|\___|_|_|\___/	     |_| |_| \___||_||_| \___/ 
-
-Note that for the reasons described above,
-overlap does not yet work for slanted fonts.
+Glyphs are kerned, then shifted so that they overlap by column of characters:
+   ____
+  / ___|_____      __
+ | |   / _ \ \ /\ / /
+ | |__| (_) \ V  V /
+  \____\___/ \_/\_/
 
 =back
+
+Other smush modes are not yet implemented, and therefore fall back to universal.
 
 =back
 
@@ -470,23 +507,28 @@ The text to transmogrify.
 Process input as Unicode (UTF-8).
 
 B<Note that this applies regardless of your version of perl>,
-and is necessary if you are mapping in negative characters
-with a control file.
+and is necessary if you are mapping in negative characters with a control file.
 
-=item B<-X=E<gt>>[LR]
+=item B<-X=E<gt>>I<[LR]>
 
 These options control whether FIGlet prints left-to-right or right-to-left.
-B<L> selects left-to-right printing. B<R> selects right-to-left printing.
+I<L> selects left-to-right printing. I<R> selects right-to-left printing.
 The default is to use whatever is specified in the font file.
 
-=item B<-x=E<gt>>[lrc]
+=item B<-x=E<gt>>I<[lrc]>
 
-These options handle the justification of B<Text::FIGlet::Font>
-output. B<c> centers the output horizontally. B<l> makes the output
-flush-left. B<r> makes it flush-right. The default sets the justification
-according to whether left-to-right or right-to-left text is selected.
-Left-to-right text will be flush-left, while right-to-left text will be
-flush-right. (Left-to-rigt versus right-to-left text is controlled by B<-X>.)
+These options handle the justification of B<Text::FIGlet::Font> output.
+I<c> centers the output horizontally. I<l> makes the output flush-left.
+I<r> makes it flush-right. The default sets the justification according
+to whether left-to-right or right-to-left text is selected. Left-to-right
+text will be flush-left, while right-to-left text will be flush-right.
+(Left-to-rigt versus right-to-left text is controlled by B<-X>.)
+
+=item B<-m=E<gt>>I<layoutmode>
+
+Although -B<-m> is best thought of as a font instantiation option,
+it is possible to switch between layout modes greater than zero at
+figification time. Your mileage may vary.
 
 =item B<-w=E<gt>>I<outputwidth>
 
@@ -494,7 +536,7 @@ The output width, output text is wrapped to this value by breaking the
 input on whitspace where possible. There are two special width values
 
  -1 the text is not wrapped.
-  1 the text is wrapped after very character.
+  1 the text is wrapped after every character; most useful with -m=>-3
 
 Defaults to 80
 
@@ -508,8 +550,7 @@ B<Text::FIGlet::Font> will make use of these environment variables if present
 
 =item FIGFONT
 
-The default font to load.
-If undefined the default is F<standard.flf>.
+The default font to load. If undefined the default is F<standard.flf>.
 It should reside in the directory specified by FIGLIB.
 
 =item FIGLIB
@@ -529,7 +570,7 @@ FIGlet font files are available at
 
 L<Text::FIGlet>, L<figlet(6)>
 
-=head1 CAVEATS
+=head1 CAVEATS & RESTRICTIONS
 
 =over
 
@@ -540,16 +581,24 @@ Don't mess with it, B<perl> sets it correctly for you.
 
 =item B<-m=>E<gt>'-0'
 
-This mode is peculiar to Text::FIGlet, and as such, results will vary
+This mode is peculiar to B<Text::FIGlet>, and as such, results will vary
 amongst fonts.
 
 =item Support for pre-5.6 perl
 
 This codebase was originally developed to be compatible with 5.005.03,
-and has recently been manually checked against 5.005.04. Unfortunately,
+and has recently been manually checked against 5.005.05. Unfortunately,
 the default test suite makes use of code that is not compatable with
-versions of perl prior to 5.6. F<test.pl> attempts to work around this
-to provide some basic testing of functionality.
+versions of perl prior to 5.6. F<t/5005-lib.pm> attempts to work around
+this to provide some basic testing of functionality.
+
+=item Support for TOIlet fonts
+
+Although the FIGlet font specification is not clear on the matter,
+convention dictates that there be no trailing whitespace after the
+end of line marker. Unfortunately some auto-generated TOIlet fonts
+break with this convention, while also lacking critical hardspaces.
+To fix these fonts, unzip then run C<perl -pi~ -e 's/@ $/$\@/'> on them.
 
 =back
 
@@ -582,7 +631,8 @@ at this time only characters -2 through -65_535 are supported.
 
 The standard font is 4Mb with no optimizations.
 
-Listed below are increasingly severe means of reducing memory use.
+Listed below are increasingly severe means of reducing memory use when
+creating an object.
 
 =over
 
@@ -599,10 +649,6 @@ This only loads ASCII characters; plus the Deutsch characters if -D is true.
 The standard font is 14kb with this optimization.
 
 =back
-
-=head1 RESTRICTIONS
-
-There is support for negative characters -1 through -65,536.
 
 =head1 AUTHOR
 

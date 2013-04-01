@@ -1,6 +1,7 @@
+Makefile.PL
 CHANGES
 MANIFEST
-Makefile.PL
+META.yml
 README
 TODO
 bin/charmap.pl
@@ -13,6 +14,7 @@ doc/minifig.txt
 lib/Text/FIGlet.pm
 lib/Text/FIGlet/Control.pm
 lib/Text/FIGlet/Font.pm
+lib/Text/FIGlet/Illuminated.pm
 lib/Text/FIGlet/LICENSE.pod
 lib/Text/FIGlet/Ransom.pm
 share/emboss.tlf
@@ -26,5 +28,5 @@ t/2-extended.t
 t/2.flc
 t/2.flf
 t/3-ransom.t
+t/4-pod.t
 t/5005-lib.pm
-META.yml                                 Module meta-data (added by MakeMaker)

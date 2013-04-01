@@ -1,6 +1,19 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
+2.19	2013-03-31
+	- Full kerning!
+	- Basic smushing support has been added. Universal smushing
+          (aka overlap) is used if any smush mode is specified.
+	- New Illuminated sub-class to use figfonts as accents in plain text.
+	- Add examples of various layout modes to documentation.
+	- Documentation clean-up.
+	- Fix rare quasi-bug in font file parsing exposed by bug #56588
+	- Document fix for use of caca2tlf misformatted TOIlet fonts.
+	- Fix bugs with list-context figification
+	      - Original input string was appended to list
+	      - Switch to Encode::decode en lieu of _utf8_on, keep _uf8_off
+
 2.18	Sat Oct 10 04h EST 2009
 	- Tweaked code so that Font could process DOS formatted files in Un*x.
 	- Document Ransom in FIGlet.pm
@@ -8,6 +21,9 @@ Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 	- Better documentation of freeze.
 	- Added preliminary overlap implementation.
 	- Various small simplifications and corrections.
+	- Although -m=>'-0' is still accepted for fixed-width mode, -3 is the
+	  new and preferred value. With this change, ordering modes by their
+	  values results in a smooth progression of output modification.
 
 2.17	Mon Oct 05 22h EST 2009
 	- Implemented Ransom font freezing
