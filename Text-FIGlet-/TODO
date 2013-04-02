@@ -1,4 +1,7 @@
 TEST
+	Test 0
+		Regression prevention: absolute -f canonicalization
+
 	Test 1
 		Kerning
 
@@ -20,19 +23,23 @@ TEST
 	Test ?
 		DOS-formatted txt file font
 
+		bifig.flf post-processing, problem with (missing) hardspaces?
+
 FEATURES
-	- "Vertical Fitting", indicated by header[-2] above
+        More smushing modes, consult http://bolknote.ru/files/figlet/?
 
-	- Ransom support for ANSI & Unicode (w/ sparse codepoints)
+	"Vertical Fitting", indicated by header[-2] above
 
-	- Ransom script to generate font, test output, then save font
+	Ransom support for ANSI & Unicode (w/ sparse codepoints)
 
-        - QOTW19 "OCR"?
+	Ransom script to generate font, test output, then save font
 
-	- controls; h j b g
-		- isn't u enough?
+        QOTW19 "OCR"? http://perl.plover.com/qotw/e/019
 
-	- other scripts: chkfont... this is hard
+	controls; h j b g
+		isn't u enough?
+
+	other scripts: chkfont... this is hard
 
 FIX
 	Control
@@ -98,3 +105,6 @@ REFACTOR
 
 
 	Revisit local 1.07 branches, anything to salvage?
+
+	Experimental parsing (mis-)feature?
+	my $file = qr/^(??{$hunk})*$/x;

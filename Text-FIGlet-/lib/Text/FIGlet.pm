@@ -1,7 +1,7 @@
 package Text::FIGlet;
 use strict;
 use vars qw'$VERSION %RE';
-$VERSION = 2.19.1;             #Actual code version: 2.19.1
+$VERSION = 2.19.2;             #Actual code version: 2.19.1
 
                                #~50us penalty w/ 2 constant calls for 5.005
 use constant PRIVb => 0xF0000; #Map neg chars into Unicode's private area
@@ -140,7 +140,8 @@ sub _no{
 
 sub _canonical{
   my($defdir, $usrfile, $extre, $backslash) = @_;
-  return File::Spec->catfile($defdir, $usrfile);
+  return -e $usrfile ? $usrfile :
+      File::Spec->catfile($defdir, $usrfile);
 
   #Dragons be here, was for pseudo-Windows tests/old Perls?
 

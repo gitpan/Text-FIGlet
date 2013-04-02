@@ -1,7 +1,11 @@
 Revision history for Perl extension Text::FIGlet and "working demos" in bin/
 (figlet.pl, minifig.pl, charmap.pl, showfigfonts.pl)
 
-2.19.1	Mon Apr 01 h EST 2013
+2.19.2  Mon Apr 01 22h EST 2013
+	- Repair canonicalization for -f(onts) given as absolute paths.
+	- Fix -m passing in figlet.pl to allow font default.
+
+2.19.1	Mon Apr 01 21h EST 2013
 	- Updated FIGlet font repository URI.
 	- Excise wonky file path canonicalization, tests now run on Windows.
 	- Tweak whatis descriptions.

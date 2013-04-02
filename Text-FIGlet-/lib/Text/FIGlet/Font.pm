@@ -4,7 +4,7 @@ use vars qw($REwhite $VERSION);
 use Carp qw(cluck confess);
 use Symbol; #5.005 support
 use Text::Wrap;
-$VERSION = 2.19;
+$VERSION = 2.19.2;
 
 #'import' core support functions from parent with circular dependency
 foreach( qw/UTF8len UTF8ord _canonical _no _utf8_on/){

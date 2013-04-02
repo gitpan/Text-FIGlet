@@ -3,7 +3,7 @@ package main;
 use strict;
 use vars '$VERSION';
 use Text::FIGlet 2.01;
-$VERSION = 2.1.2; #2.11
+$VERSION = 2.19.2;
 
 my %opts;
 $opts{-C} = [];
@@ -51,7 +51,7 @@ if( $opts{I} == 1 ){
 
 my $font = Text::FIGlet->new(-D=>$opts{D}&&!$opts{E},
 			  -d=>$opts{d},
-			  -m=>$opts{m},
+			  -m=>$opts{m}||-2,
 			  -f=>$opts{f});
 @_ = map { -C=> $_ } @{$opts{-C}} if scalar @{$opts{-C}};
 my $ctrl = Text::FIGlet->new( @_,
