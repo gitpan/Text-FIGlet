@@ -34,7 +34,6 @@ sub _load_font{
 			      $^O =~ /MSWin32|DOS/i);
   #XXX bsd_glob .[ft]lf
   $self->{_file} = (glob($self->{_file}.'.?lf'))[0] unless -e $self->{_file};
-  #XXX retest for existence in case someone does -f foo instead of -f=foo?
 
   #open(FLF, $self->{_file}) || confess("$!: $self->{_file}");
   $self->{_fh} = gensym;            #5.005 support
@@ -219,7 +218,6 @@ sub figify{
     local $_;
 
     $opts{-w} ||= 80;
-    &Encode::_utf8_off($opts{-A}) if $] >= 5.008;
 
     #Prepare the input
     $opts{-X} ||= $self->{_header}->[6] ? 'R' : 'L';
@@ -233,8 +231,10 @@ sub figify{
 	$Text::Wrap::columns = int($opts{-w} / $self->{_maxLen})+1;
 	$Text::Wrap::columns =2 if $Text::Wrap::columns < 2;
 	$opts{-A} = Text::Wrap::wrap('', '', $opts{-A});
+	&Encode::_utf8_off($opts{-A}) if $] >= 5.008;
     }
     elsif( $opts{-w} > 0 ){
+	&Encode::_utf8_off($opts{-A}) if $] >= 5.008;
 	$Text::Wrap::columns = $opts{-w}+1;
 	unless( $opts{-w} == 1 ){
 	  ($_, $opts{-A}) = ($opts{-A}, '');
@@ -251,7 +251,6 @@ sub figify{
         $opts{-A} = Text::Wrap::wrap('', '', $opts{-A});
 	$opts{-A} =~ tr/\0//d;
     }
-
 
     #Assemble glyphs
     my $X = defined($self->{-m}) && $self->{-m} < 0 ? '' : "\000";
@@ -350,7 +349,7 @@ __END__
 
 =head1 NAME
 
-Text::FIGlet::Font - text generation for Text::FIGlet
+Text::FIGlet::Font - font engine for Text::FIGlet
 
 =head1 SYNOPSIS
 

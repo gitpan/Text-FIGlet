@@ -4,7 +4,7 @@ use constant PRIVe => 0xFFFFD;
 use strict;
 use vars '$VERSION';
 use Text::FIGlet 2.01;
-$VERSION = 2.1.2_2; #2.04
+$VERSION = 2.19.1;
 
 my %opts;
 $opts{$_} = undef for
@@ -70,7 +70,8 @@ my @buffer;
 			    -D=>1,
 			    -d=>$opts{d},
 			    -m=>'-0',
-			    -f=>$opts{f});
+			    -f=>$opts{f},
+			    -U=>1);
 
 #XXX  $n = int($opts{w}||80 / $font->{_maxLen});
 
@@ -258,6 +259,12 @@ FIGlet font files, these can be found at
  http://www.internexus.net/pub/figlet/
  ftp://wuarchive.wustl.edu/graphics/graphics/misc/figlet/
  ftp://ftp.plig.org/pub/figlet/
+
+=head1 CAVEATS
+
+The L<Text::Wrap> in perl 5.6 or earlier operate on bytes,
+consequently the display of characters greater than 0x100
+end up wrapped across two rows.
 
 =head1 SEE ALSO
 

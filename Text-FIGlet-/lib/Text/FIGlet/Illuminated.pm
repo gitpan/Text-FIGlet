@@ -166,7 +166,7 @@ Default options are inherited from L<Text::FIGlet>.
 
 Default options are inherited from L<Text::FIGlet::Font>.
 
-Pass a negative width if you would like only the first character of the
+Pass a negative width if you would like only the first paragraph of the
 input to be illuminated, otherwise each paragraph will be illuminated.
 
 =head1 ENVIRONMENT
@@ -176,6 +176,11 @@ will make use of these environment variables if present
 
 =over
 
+=item FIGFONT
+
+The default font to load. If undefined the default is F<standard.flf>.
+It should reside in the directory specified by FIGLIB.
+
 =item FIGLIB
 
 The default location of fonts.
@@ -183,9 +188,18 @@ If undefined the default is F</usr/games/lib/figlet>
 
 =back
 
-=head1 CAVEATS
+=head1 CAVEATS & RESTRICTIONS
 
 Kerning and smushing modes make little sense with B<Illuminated>.
+
+=over
+
+=item $/ is used to separate the input
+
+Consequently, make sure it is set appropriately i.e;
+Don't mess with it, B<perl> sets it correctly for you.
+
+=back
 
 =head1 SEE ALSO
 

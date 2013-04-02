@@ -159,7 +159,7 @@ __END__
 
 =head1 NAME
 
-Text::FIGlet::Ransom - composite font support
+Text::FIGlet::Ransom - blended/composite font support for Text:FIGlet
 
 =head1 SYNOPSIS
 

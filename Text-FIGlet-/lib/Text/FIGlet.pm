@@ -1,7 +1,7 @@
 package Text::FIGlet;
 use strict;
 use vars qw'$VERSION %RE';
-$VERSION = 2.19;               #Actual code version: 2.19
+$VERSION = 2.19.1;             #Actual code version: 2.19.1
 
                                #~50us penalty w/ 2 constant calls for 5.005
 use constant PRIVb => 0xF0000; #Map neg chars into Unicode's private area
@@ -140,13 +140,21 @@ sub _no{
 
 sub _canonical{
   my($defdir, $usrfile, $extre, $backslash) = @_;
+  return File::Spec->catfile($defdir, $usrfile);
 
+  #Dragons be here, was for pseudo-Windows tests/old Perls?
+
+  #Split things up
   my($file, $path, $ext) = fileparse($usrfile, $extre);
+
   $path =~ y/\\/\// if $backslash;
 
+  #Handle paths relative to current directory
   my $curdir = File::Spec->catfile(File::Spec->curdir, "");
   $path = $defdir if $path eq $curdir && index($usrfile, $curdir) < 0;
 
+
+  #return canonicaled path
   return File::Spec->catfile($path, $file.$ext);
 }
 
@@ -158,7 +166,7 @@ __END__
 
 =head1 NAME
 
-Text::FIGlet - a perl module to provide FIGlet abilities, akin to banner
+Text::FIGlet -  provide FIGlet abilities, akin to banner i.e; ASCII art
 
 =head1 SYNOPSIS
 
@@ -277,7 +285,7 @@ If undefined the default is F</usr/games/lib/figlet>
 
 FIGlet font files and control files are available at
 
-  ftp://ftp.figlet.org/pub/figlet/
+  http://www.figlet.org/fontdb.cgi
  
 =head1 SEE ALSO
 
