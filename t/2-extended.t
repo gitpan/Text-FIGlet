@@ -1,8 +1,14 @@
 BEGIN{
-	$|=1;
-	my $t = 7;
-	$] < 5.006 ? do{ print "1..$t\n"; require 't/5005-lib.pm'} :
-	eval "use Test::More tests => $t; use Test::Differences"; }
+  #Test characters instead of bytes if possible
+  if( $] >= 5.006 ){
+    eval "use utf8";
+    utf8::import();
+  }
+  $|=1;
+  my $t = 7;
+  $] < 5.006 ? do{ print "1..$t\n"; require 't/5005-lib.pm'} :
+    eval "use Test::More tests => $t; use Test::Differences";
+}
 use Text::FIGlet;
 
 

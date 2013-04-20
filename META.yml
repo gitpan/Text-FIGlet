@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Text-FIGlet
-version:            
+version:            2.19.3
 abstract:           ~
 author:  []
 license:            perl
